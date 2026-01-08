@@ -1,37 +1,59 @@
 import type { PredictionMarket } from '@/types';
-import { API_URLS } from '@/config';
 import { fetchWithProxy } from '@/utils';
 
-interface PolymarketEvent {
-  title: string;
-  markets?: Array<{
-    outcomePrices?: string[];
-    volume?: string;
-  }>;
+interface PolymarketMarket {
+  question: string;
+  outcomes?: string[];
+  outcomePrices?: string[];
+  volume?: string;
+  volumeNum?: number;
+  closed?: boolean;
 }
 
 export async function fetchPredictions(): Promise<PredictionMarket[]> {
   try {
-    const response = await fetchWithProxy(API_URLS.polymarket);
+    // Use /markets endpoint ordered by volume (most active first)
+    const response = await fetchWithProxy(
+      '/api/polymarket/markets?closed=false&order=volume&ascending=false&limit=25'
+    );
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data: PolymarketEvent[] = await response.json();
+    const data: PolymarketMarket[] = await response.json();
 
     return data
-      .slice(0, 10)
-      .map((event) => {
-        const market = event.markets?.[0];
-        const rawPrice = market?.outcomePrices?.[0];
-        const parsed = rawPrice ? parseFloat(rawPrice) : NaN;
-        const yesPrice = isNaN(parsed) ? 50 : parsed * 100;
-        const volume = market?.volume ? parseFloat(market.volume) : undefined;
+      .map((market) => {
+        // Parse outcomePrices - it's an array of string prices
+        const prices = market.outcomePrices;
+        let yesPrice = 50; // default
+
+        if (prices && prices.length >= 2) {
+          // First price is typically "Yes" outcome
+          const priceStr = prices[0];
+          if (priceStr) {
+            const parsed = parseFloat(priceStr);
+            if (!isNaN(parsed)) {
+              yesPrice = parsed * 100;
+            }
+          }
+        }
+
+        const volume = market.volumeNum ?? (market.volume ? parseFloat(market.volume) : 0);
 
         return {
-          title: event.title,
+          title: market.question || '',
           yesPrice,
           volume,
         };
       })
-      .filter((p) => p.title && !isNaN(p.yesPrice));
+      .filter((p) => {
+        // Filter out empty titles and ensure valid price
+        if (!p.title || isNaN(p.yesPrice)) return false;
+
+        // Filter for "interesting" markets - those with strong signals (far from 50%)
+        // Keep markets where Yes is below 40% or above 60%
+        const discrepancy = Math.abs(p.yesPrice - 50);
+        return discrepancy > 10 || (p.volume && p.volume > 10000);
+      })
+      .slice(0, 12); // Limit to 12 predictions
   } catch (e) {
     console.error('Failed to fetch predictions:', e);
     return [];
