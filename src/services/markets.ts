@@ -1,5 +1,6 @@
 import type { MarketData, CryptoData } from '@/types';
 import { API_URLS, CRYPTO_MAP } from '@/config';
+import { fetchWithProxy } from '@/utils';
 
 interface YahooFinanceResponse {
   chart: {
@@ -27,7 +28,7 @@ export async function fetchStockQuote(
 ): Promise<MarketData> {
   try {
     const url = API_URLS.yahooFinance(symbol);
-    const response = await fetch(url);
+    const response = await fetchWithProxy(url);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data: YahooFinanceResponse = await response.json();
 
@@ -70,7 +71,7 @@ export async function fetchMultipleStocks(
 
 export async function fetchCrypto(): Promise<CryptoData[]> {
   try {
-    const response = await fetch(API_URLS.coingecko);
+    const response = await fetchWithProxy(API_URLS.coingecko);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data: CoinGeckoResponse = await response.json();
 

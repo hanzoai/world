@@ -1,9 +1,10 @@
 import type { Feed, NewsItem } from '@/types';
 import { ALERT_KEYWORDS } from '@/config';
+import { fetchWithProxy } from '@/utils';
 
 export async function fetchFeed(feed: Feed): Promise<NewsItem[]> {
   try {
-    const response = await fetch(feed.url);
+    const response = await fetchWithProxy(feed.url);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const text = await response.text();
     const parser = new DOMParser();

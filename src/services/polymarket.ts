@@ -1,5 +1,6 @@
 import type { PredictionMarket } from '@/types';
 import { API_URLS } from '@/config';
+import { fetchWithProxy } from '@/utils';
 
 interface PolymarketEvent {
   title: string;
@@ -11,7 +12,7 @@ interface PolymarketEvent {
 
 export async function fetchPredictions(): Promise<PredictionMarket[]> {
   try {
-    const response = await fetch(API_URLS.polymarket);
+    const response = await fetchWithProxy(API_URLS.polymarket);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data: PolymarketEvent[] = await response.json();
 

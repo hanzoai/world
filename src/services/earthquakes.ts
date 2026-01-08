@@ -1,5 +1,6 @@
 import type { Earthquake } from '@/types';
 import { API_URLS } from '@/config';
+import { fetchWithProxy } from '@/utils';
 
 interface USGSFeature {
   id: string;
@@ -20,7 +21,7 @@ interface USGSResponse {
 
 export async function fetchEarthquakes(): Promise<Earthquake[]> {
   try {
-    const response = await fetch(API_URLS.earthquakes);
+    const response = await fetchWithProxy(API_URLS.earthquakes);
     const data: USGSResponse = await response.json();
 
     return data.features.map((feature) => ({

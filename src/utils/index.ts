@@ -73,3 +73,5 @@ export function saveToStorage<T>(key: string, value: T): void {
 export function generateId(): string {
   return `id-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
+
+export { proxyUrl, fetchWithProxy } from './proxy';
