@@ -1,0 +1,257 @@
+import { defineConfig } from 'vite';
+import { resolve } from 'path';
+
+export default defineConfig({
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src'),
+    },
+  },
+  server: {
+    port: 3000,
+    open: true,
+    proxy: {
+      // Yahoo Finance API
+      '/api/yahoo': {
+        target: 'https://query1.finance.yahoo.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/yahoo/, ''),
+      },
+      // CoinGecko API
+      '/api/coingecko': {
+        target: 'https://api.coingecko.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/coingecko/, ''),
+      },
+      // Polymarket API
+      '/api/polymarket': {
+        target: 'https://gamma-api.polymarket.com',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api\/polymarket/, ''),
+        configure: (proxy) => {
+          proxy.on('error', (err) => {
+            console.log('Polymarket proxy error:', err.message);
+          });
+        },
+      },
+      // USGS Earthquake API
+      '/api/earthquake': {
+        target: 'https://earthquake.usgs.gov',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/earthquake/, ''),
+      },
+      // RSS Feeds - BBC
+      '/rss/bbc': {
+        target: 'https://feeds.bbci.co.uk',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/bbc/, ''),
+      },
+      // RSS Feeds - Guardian
+      '/rss/guardian': {
+        target: 'https://www.theguardian.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/guardian/, ''),
+      },
+      // RSS Feeds - NPR
+      '/rss/npr': {
+        target: 'https://feeds.npr.org',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/npr/, ''),
+      },
+      // RSS Feeds - Reuters
+      '/rss/reuters': {
+        target: 'https://www.reutersagency.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/reuters/, ''),
+      },
+      // RSS Feeds - Al Jazeera
+      '/rss/aljazeera': {
+        target: 'https://www.aljazeera.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/aljazeera/, ''),
+      },
+      // RSS Feeds - CNN
+      '/rss/cnn': {
+        target: 'http://rss.cnn.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/cnn/, ''),
+      },
+      // RSS Feeds - Hacker News
+      '/rss/hn': {
+        target: 'https://hnrss.org',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/hn/, ''),
+      },
+      // RSS Feeds - Ars Technica
+      '/rss/arstechnica': {
+        target: 'https://feeds.arstechnica.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/arstechnica/, ''),
+      },
+      // RSS Feeds - The Verge
+      '/rss/verge': {
+        target: 'https://www.theverge.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/verge/, ''),
+      },
+      // RSS Feeds - CNBC
+      '/rss/cnbc': {
+        target: 'https://www.cnbc.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/cnbc/, ''),
+      },
+      // RSS Feeds - MarketWatch
+      '/rss/marketwatch': {
+        target: 'https://feeds.marketwatch.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/marketwatch/, ''),
+      },
+      // RSS Feeds - Defense/Intel sources
+      '/rss/defenseone': {
+        target: 'https://www.defenseone.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/defenseone/, ''),
+      },
+      '/rss/warontherocks': {
+        target: 'https://warontherocks.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/warontherocks/, ''),
+      },
+      '/rss/breakingdefense': {
+        target: 'https://breakingdefense.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/breakingdefense/, ''),
+      },
+      '/rss/bellingcat': {
+        target: 'https://www.bellingcat.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/bellingcat/, ''),
+      },
+      // RSS Feeds - TechCrunch (layoffs)
+      '/rss/techcrunch': {
+        target: 'https://techcrunch.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/techcrunch/, ''),
+      },
+      // Google News RSS
+      '/rss/googlenews': {
+        target: 'https://news.google.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/googlenews/, ''),
+      },
+      // AI Company Blogs
+      '/rss/openai': {
+        target: 'https://openai.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/openai/, ''),
+      },
+      '/rss/anthropic': {
+        target: 'https://www.anthropic.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/anthropic/, ''),
+      },
+      '/rss/googleai': {
+        target: 'https://blog.google',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/googleai/, ''),
+      },
+      '/rss/deepmind': {
+        target: 'https://deepmind.google',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/deepmind/, ''),
+      },
+      '/rss/huggingface': {
+        target: 'https://huggingface.co',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/huggingface/, ''),
+      },
+      '/rss/techreview': {
+        target: 'https://www.technologyreview.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/techreview/, ''),
+      },
+      '/rss/arxiv': {
+        target: 'https://rss.arxiv.org',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/arxiv/, ''),
+      },
+      // Government
+      '/rss/whitehouse': {
+        target: 'https://www.whitehouse.gov',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/whitehouse/, ''),
+      },
+      '/rss/statedept': {
+        target: 'https://www.state.gov',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/statedept/, ''),
+      },
+      '/rss/fedreserve': {
+        target: 'https://www.federalreserve.gov',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/fedreserve/, ''),
+      },
+      '/rss/sec': {
+        target: 'https://www.sec.gov',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/sec/, ''),
+      },
+      '/rss/treasury': {
+        target: 'https://home.treasury.gov',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/treasury/, ''),
+      },
+      '/rss/cisa': {
+        target: 'https://www.cisa.gov',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/cisa/, ''),
+      },
+      // Think Tanks
+      '/rss/brookings': {
+        target: 'https://www.brookings.edu',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/brookings/, ''),
+      },
+      '/rss/cfr': {
+        target: 'https://www.cfr.org',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/cfr/, ''),
+      },
+      '/rss/csis': {
+        target: 'https://www.csis.org',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/csis/, ''),
+      },
+      // Defense
+      '/rss/warzone': {
+        target: 'https://www.thedrive.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/warzone/, ''),
+      },
+      '/rss/defensegov': {
+        target: 'https://www.defense.gov',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/defensegov/, ''),
+      },
+      // Security
+      '/rss/krebs': {
+        target: 'https://krebsonsecurity.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/krebs/, ''),
+      },
+      // Finance
+      '/rss/yahoonews': {
+        target: 'https://finance.yahoo.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/yahoonews/, ''),
+      },
+      // Diplomat
+      '/rss/diplomat': {
+        target: 'https://thediplomat.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/diplomat/, ''),
+      },
+    },
+  },
+});
