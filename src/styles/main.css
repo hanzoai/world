@@ -60,6 +60,14 @@ body {
   color: var(--accent);
 }
 
+.credit {
+  font-size: 9px;
+  color: var(--muted);
+  opacity: 0.6;
+  font-weight: normal;
+  letter-spacing: 0.5px;
+}
+
 .status-indicator {
   display: flex;
   align-items: center;

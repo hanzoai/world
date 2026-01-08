@@ -59,6 +59,7 @@ export class App {
       <div class="header">
         <div class="header-left">
           <span class="logo">WORLD MONITOR</span>
+          <span class="credit">by Elie Habib</span>
           <div class="status-indicator">
             <span class="status-dot"></span>
             <span>LIVE</span>
