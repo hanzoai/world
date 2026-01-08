@@ -5,7 +5,7 @@ export const FEEDS: Record<string, Feed[]> = {
     { name: 'BBC World', url: '/rss/bbc/news/world/rss.xml' },
     { name: 'NPR News', url: '/rss/npr/1001/rss.xml' },
     { name: 'Guardian World', url: '/rss/guardian/world/rss' },
-    { name: 'Reuters', url: '/rss/reuters/feed/?taxonomy=best-sectors&post_type=best' },
+    { name: 'AP News', url: '/rss/apnews/feed' },
     { name: 'The Diplomat', url: '/rss/diplomat/feed/' },
   ],
   middleeast: [
@@ -21,12 +21,10 @@ export const FEEDS: Record<string, Feed[]> = {
     { name: 'MIT Tech Review', url: '/rss/techreview/feed/' },
   ],
   ai: [
-    { name: 'OpenAI Blog', url: '/rss/openai/blog/rss.xml' },
-    { name: 'Anthropic', url: '/rss/anthropic/rss.xml' },
-    { name: 'Google AI', url: '/rss/googleai/technology/ai/rss/' },
-    { name: 'DeepMind', url: '/rss/deepmind/blog/rss.xml' },
+    { name: 'AI News', url: '/rss/googlenews/rss/search?q=artificial+intelligence+AI+news&hl=en-US&gl=US&ceid=US:en' },
     { name: 'Hugging Face', url: '/rss/huggingface/blog/feed.xml' },
     { name: 'ArXiv AI', url: '/rss/arxiv/rss/cs.AI' },
+    { name: 'VentureBeat AI', url: '/rss/venturebeat/feed/' },
   ],
   finance: [
     { name: 'CNBC', url: '/rss/cnbc/id/100003114/device/rss/rss.html' },
@@ -34,11 +32,9 @@ export const FEEDS: Record<string, Feed[]> = {
     { name: 'Yahoo Finance', url: '/rss/yahoonews/news/rssindex' },
   ],
   gov: [
-    { name: 'White House', url: '/rss/whitehouse/feed/' },
-    { name: 'State Dept', url: '/rss/statedept/rss-feed/press-releases/feed/' },
     { name: 'Federal Reserve', url: '/rss/fedreserve/feeds/press_all.xml' },
     { name: 'SEC', url: '/rss/sec/news/pressreleases.rss' },
-    { name: 'Treasury', url: '/rss/treasury/system/files/136/treasury-rss.xml' },
+    { name: 'Gov News', url: '/rss/googlenews/rss/search?q=US+government+policy+congress&hl=en-US&gl=US&ceid=US:en' },
   ],
   layoffs: [
     { name: 'TechCrunch Layoffs', url: '/rss/techcrunch/tag/layoffs/feed/' },
@@ -48,19 +44,17 @@ export const FEEDS: Record<string, Feed[]> = {
     { name: 'Congress Trades', url: '/rss/googlenews/rss/search?q=congress+stock+trading+pelosi+tuberville&hl=en-US&gl=US&ceid=US:en' },
   ],
   thinktanks: [
-    { name: 'Brookings', url: '/rss/brookings/feed/' },
-    { name: 'CFR', url: '/rss/cfr/rss.xml' },
-    { name: 'CSIS', url: '/rss/csis/analysis/feed' },
+    { name: 'Foreign Policy', url: '/rss/foreignpolicy/feed/' },
+    { name: 'Think Tank News', url: '/rss/googlenews/rss/search?q=brookings+CSIS+CFR+analysis&hl=en-US&gl=US&ceid=US:en' },
   ],
 };
 
 export const INTEL_SOURCES: Feed[] = [
   { name: 'Defense One', url: '/rss/defenseone/rss/all/', type: 'defense' },
-  { name: 'War on Rocks', url: '/rss/warontherocks/feed/', type: 'defense' },
   { name: 'Breaking Defense', url: '/rss/breakingdefense/feed/', type: 'defense' },
   { name: 'The War Zone', url: '/rss/warzone/the-war-zone/feed', type: 'defense' },
+  { name: 'Defense News', url: '/rss/googlenews/rss/search?q=defense+military+pentagon&hl=en-US&gl=US&ceid=US:en', type: 'defense' },
   { name: 'Bellingcat', url: '/rss/bellingcat/feed/', type: 'osint' },
-  { name: 'CISA Alerts', url: '/rss/cisa/uscert/ncas/alerts.xml', type: 'cyber' },
   { name: 'Krebs Security', url: '/rss/krebs/feed/', type: 'cyber' },
 ];
 

@@ -59,11 +59,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/rss\/npr/, ''),
       },
-      // RSS Feeds - Reuters
-      '/rss/reuters': {
-        target: 'https://www.reutersagency.com',
+      // RSS Feeds - AP News
+      '/rss/apnews': {
+        target: 'https://rsshub.app/apnews',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/rss\/reuters/, ''),
+        rewrite: (path) => path.replace(/^\/rss\/apnews/, ''),
       },
       // RSS Feeds - Al Jazeera
       '/rss/aljazeera': {
@@ -251,6 +251,18 @@ export default defineConfig({
         target: 'https://thediplomat.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/rss\/diplomat/, ''),
+      },
+      // VentureBeat
+      '/rss/venturebeat': {
+        target: 'https://venturebeat.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/venturebeat/, ''),
+      },
+      // Foreign Policy
+      '/rss/foreignpolicy': {
+        target: 'https://foreignpolicy.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/foreignpolicy/, ''),
       },
     },
   },
