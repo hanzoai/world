@@ -287,8 +287,8 @@ export const CONFLICT_ZONES: ConflictZone[] = [
   {
     id: 'sudan',
     name: 'Sudan Civil War',
-    coords: [[22, 22], [38, 22], [38, 8], [22, 8]],
-    center: [30, 15],
+    coords: [[30, 17], [34, 17], [34, 13], [30, 13]],
+    center: [32, 15],
     intensity: 'high',
     parties: ['Sudanese Armed Forces (SAF)', 'Rapid Support Forces (RSF)'],
     casualties: '15,000+ killed',
@@ -302,8 +302,8 @@ export const CONFLICT_ZONES: ConflictZone[] = [
   {
     id: 'myanmar',
     name: 'Myanmar Civil War',
-    coords: [[92, 28], [101, 28], [101, 10], [92, 10]],
-    center: [96, 19],
+    coords: [[95, 22], [98, 22], [98, 18], [95, 18]],
+    center: [96.5, 20],
     intensity: 'medium',
     parties: ['Military junta', 'NUG', 'Ethnic armed groups'],
     casualties: '50,000+ (est.)',
