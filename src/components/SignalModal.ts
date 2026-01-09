@@ -36,8 +36,8 @@ export class SignalModal {
 
   private createSignalBadge(): void {
     this.signalBadge = document.createElement('button');
-    this.signalBadge.className = 'signal-badge hidden';
-    this.signalBadge.title = 'Signal notifications';
+    this.signalBadge.className = 'signal-badge';
+    this.signalBadge.title = 'Signal notifications (click to view)';
     this.signalBadge.innerHTML = '<span class="signal-badge-icon">⚡</span><span class="signal-badge-count">0</span>';
     this.signalBadge.addEventListener('click', () => this.openModal());
 
@@ -103,11 +103,10 @@ export class SignalModal {
     const countEl = this.signalBadge.querySelector('.signal-badge-count');
     if (countEl) countEl.textContent = String(this.pendingCount);
 
+    // Always show badge, but only pulse when there are signals
     if (this.pendingCount > 0) {
-      this.signalBadge.classList.remove('hidden');
       this.signalBadge.classList.add('active');
     } else {
-      this.signalBadge.classList.add('hidden');
       this.signalBadge.classList.remove('active');
     }
   }
