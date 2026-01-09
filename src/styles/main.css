@@ -593,6 +593,14 @@ body {
   border-left-color: var(--green);
 }
 
+.signal-item.convergence {
+  border-left-color: #00d4ff;
+}
+
+.signal-item.triangulation {
+  border-left-color: #ff6b00;
+}
+
 .signal-type {
   font-size: 10px;
   text-transform: uppercase;

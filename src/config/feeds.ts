@@ -64,6 +64,44 @@ export function getSourceTier(sourceName: string): number {
   return SOURCE_TIERS[sourceName] ?? 4; // Default to tier 4 if unknown
 }
 
+export type SourceType = 'wire' | 'gov' | 'intel' | 'mainstream' | 'market' | 'tech' | 'other';
+
+export const SOURCE_TYPES: Record<string, SourceType> = {
+  // Wire services - fastest, most authoritative
+  'Reuters': 'wire', 'Reuters World': 'wire', 'Reuters Business': 'wire',
+  'AP News': 'wire', 'AFP': 'wire', 'Bloomberg': 'wire',
+
+  // Government sources
+  'White House': 'gov', 'State Dept': 'gov', 'Pentagon': 'gov',
+  'Treasury': 'gov', 'DOJ': 'gov', 'DHS': 'gov', 'CDC': 'gov',
+  'FEMA': 'gov', 'Federal Reserve': 'gov', 'SEC': 'gov',
+
+  // Intel/Defense specialty
+  'Defense One': 'intel', 'Breaking Defense': 'intel', 'The War Zone': 'intel',
+  'Defense News': 'intel', 'Bellingcat': 'intel', 'Krebs Security': 'intel',
+  'Foreign Policy': 'intel', 'The Diplomat': 'intel',
+
+  // Mainstream outlets
+  'BBC World': 'mainstream', 'BBC Middle East': 'mainstream',
+  'Guardian World': 'mainstream', 'Guardian ME': 'mainstream',
+  'NPR News': 'mainstream', 'Al Jazeera': 'mainstream',
+  'CNN Middle East': 'mainstream',
+
+  // Market/Finance
+  'CNBC': 'market', 'MarketWatch': 'market', 'Yahoo Finance': 'market',
+  'Financial Times': 'market',
+
+  // Tech
+  'Hacker News': 'tech', 'Ars Technica': 'tech', 'The Verge': 'tech',
+  'MIT Tech Review': 'tech', 'TechCrunch Layoffs': 'tech',
+  'AI News': 'tech', 'Hugging Face': 'tech', 'ArXiv AI': 'tech',
+  'VentureBeat AI': 'tech', 'OpenAI News': 'tech',
+};
+
+export function getSourceType(sourceName: string): SourceType {
+  return SOURCE_TYPES[sourceName] ?? 'other';
+}
+
 export const FEEDS: Record<string, Feed[]> = {
   politics: [
     { name: 'BBC World', url: '/rss/bbc/news/world/rss.xml' },

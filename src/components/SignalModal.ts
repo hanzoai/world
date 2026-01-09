@@ -125,6 +125,8 @@ export class SignalModal {
       'news_leads_markets': '📰 News Leading',
       'silent_divergence': '📊 Silent Divergence',
       'velocity_spike': '🔥 Velocity Spike',
+      'convergence': '◉ Convergence',
+      'triangulation': '△ Triangulation',
     };
 
     const html = this.currentSignals.map(signal => `

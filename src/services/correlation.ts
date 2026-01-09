@@ -1,6 +1,7 @@
 import type { ClusteredEvent, PredictionMarket, MarketData } from '@/types';
+import { getSourceType, type SourceType } from '@/config/feeds';
 
-export type SignalType = 'prediction_leads_news' | 'news_leads_markets' | 'silent_divergence' | 'velocity_spike';
+export type SignalType = 'prediction_leads_news' | 'news_leads_markets' | 'silent_divergence' | 'velocity_spike' | 'convergence' | 'triangulation';
 
 export interface CorrelationSignal {
   id: string;
@@ -98,6 +99,94 @@ function findRelatedTopics(prediction: string): string[] {
   }
 
   return [...new Set(related)];
+}
+
+// Convergence: Multiple diverse source types reporting same topic in short window
+function detectConvergence(events: ClusteredEvent[]): CorrelationSignal[] {
+  const signals: CorrelationSignal[] = [];
+  const WINDOW_MS = 30 * 60 * 1000; // 30 min window
+  const now = Date.now();
+
+  for (const event of events) {
+    if (!event.allItems || event.allItems.length < 3) continue;
+
+    // Only consider recent events
+    const recentItems = event.allItems.filter(
+      item => now - item.pubDate.getTime() < WINDOW_MS
+    );
+    if (recentItems.length < 3) continue;
+
+    // Count unique source types
+    const sourceTypes = new Set<SourceType>();
+    for (const item of recentItems) {
+      sourceTypes.add(getSourceType(item.source));
+    }
+
+    // Convergence = 3+ different source types on same story
+    if (sourceTypes.size >= 3) {
+      const types = Array.from(sourceTypes).filter(t => t !== 'other');
+      const dedupeKey = generateDedupeKey('convergence', event.id, sourceTypes.size);
+
+      if (!isRecentDuplicate(dedupeKey) && types.length >= 3) {
+        markSignalSeen(dedupeKey);
+        signals.push({
+          id: generateSignalId(),
+          type: 'convergence',
+          title: 'Source Convergence',
+          description: `"${event.primaryTitle.slice(0, 50)}..." reported by ${types.join(', ')} (${recentItems.length} sources in 30m)`,
+          confidence: Math.min(0.95, 0.6 + sourceTypes.size * 0.1),
+          timestamp: new Date(),
+          data: {
+            newsVelocity: recentItems.length,
+            relatedTopics: types,
+          },
+        });
+      }
+    }
+  }
+
+  return signals;
+}
+
+// Triangulation: Wire + Gov + Intel sources align on same topic
+function detectTriangulation(events: ClusteredEvent[]): CorrelationSignal[] {
+  const signals: CorrelationSignal[] = [];
+  const CRITICAL_TYPES: SourceType[] = ['wire', 'gov', 'intel'];
+
+  for (const event of events) {
+    if (!event.allItems || event.allItems.length < 3) continue;
+
+    const typePresent = new Set<SourceType>();
+    for (const item of event.allItems) {
+      const t = getSourceType(item.source);
+      if (CRITICAL_TYPES.includes(t)) {
+        typePresent.add(t);
+      }
+    }
+
+    // All 3 critical types present = triangulation
+    if (typePresent.size === 3) {
+      const dedupeKey = generateDedupeKey('triangulation', event.id, 3);
+
+      if (!isRecentDuplicate(dedupeKey)) {
+        markSignalSeen(dedupeKey);
+        signals.push({
+          id: generateSignalId(),
+          type: 'triangulation',
+          title: 'Intel Triangulation',
+          description: `Wire + Gov + Intel aligned: "${event.primaryTitle.slice(0, 45)}..."`,
+          confidence: 0.9,
+          timestamp: new Date(),
+          data: {
+            newsVelocity: event.sourceCount,
+            relatedTopics: Array.from(typePresent),
+          },
+        });
+      }
+    }
+  }
+
+  return signals;
 }
 
 export function analyzeCorrelations(
@@ -204,6 +293,10 @@ export function analyzeCorrelations(
   }
 
   previousSnapshot = currentSnapshot;
+
+  // Add convergence and triangulation signals
+  signals.push(...detectConvergence(events));
+  signals.push(...detectTriangulation(events));
 
   // Dedupe by type to avoid spam
   const uniqueSignals = signals.filter((sig, idx) =>
