@@ -72,7 +72,12 @@ export class StatusPanel {
   }
 
   private initDefaultStatuses(): void {
-    const feedNames = ['Politics', 'Tech', 'Finance', 'Middle East', 'AI', 'Intel', 'Polymarket'];
+    // Names must match what App.ts sends: category.charAt(0).toUpperCase() + category.slice(1)
+    const feedNames = [
+      'Politics', 'Middleeast', 'Tech', 'Ai', 'Finance',
+      'Gov', 'Intel', 'Layoffs', 'Congress', 'Thinktanks',
+      'Polymarket', 'Weather'
+    ];
     feedNames.forEach(name => {
       this.feeds.set(name, { name, lastUpdate: null, status: 'warning', itemCount: 0 });
     });
