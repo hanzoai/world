@@ -187,7 +187,7 @@ export class MapComponent {
     toggles.className = 'layer-toggles';
     toggles.id = 'layerToggles';
 
-    const layers: (keyof MapLayers)[] = ['conflicts', 'bases', 'cables', 'hotspots', 'earthquakes', 'weather', 'nuclear', 'sanctions', 'economic'];
+    const layers: (keyof MapLayers)[] = ['conflicts', 'bases', 'cables', 'hotspots', 'earthquakes', 'weather', 'nuclear', 'sanctions', 'economic', 'countries'];
 
     layers.forEach((layer) => {
       const btn = document.createElement('button');
