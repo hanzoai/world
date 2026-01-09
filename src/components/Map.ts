@@ -2,6 +2,8 @@ import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
 import type { Topology, GeometryCollection } from 'topojson-specification';
 import type { MapLayers, Hotspot, NewsItem, Earthquake } from '@/types';
+import type { WeatherAlert } from '@/services/weather';
+import { getSeverityColor } from '@/services/weather';
 import {
   MAP_URLS,
   INTEL_HOTSPOTS,
@@ -52,6 +54,7 @@ export class MapComponent {
   private usData: USTopology | null = null;
   private hotspots: HotspotWithBreaking[];
   private earthquakes: Earthquake[] = [];
+  private weatherAlerts: WeatherAlert[] = [];
   private news: NewsItem[] = [];
   private popup: MapPopup;
   private onHotspotClick?: (hotspot: Hotspot) => void;
@@ -182,7 +185,7 @@ export class MapComponent {
     toggles.className = 'layer-toggles';
     toggles.id = 'layerToggles';
 
-    const layers: (keyof MapLayers)[] = ['conflicts', 'bases', 'cables', 'hotspots', 'earthquakes', 'nuclear', 'sanctions'];
+    const layers: (keyof MapLayers)[] = ['conflicts', 'bases', 'cables', 'hotspots', 'earthquakes', 'weather', 'nuclear', 'sanctions'];
 
     layers.forEach((layer) => {
       const btn = document.createElement('button');
@@ -616,6 +619,44 @@ export class MapComponent {
         this.overlays.appendChild(div);
       });
     }
+
+    // Weather Alerts
+    if (this.state.layers.weather) {
+      this.weatherAlerts.forEach((alert) => {
+        if (!alert.centroid) return;
+        const pos = projection(alert.centroid);
+        if (!pos) return;
+
+        const div = document.createElement('div');
+        div.className = `weather-marker ${alert.severity.toLowerCase()}`;
+        div.style.left = `${pos[0]}px`;
+        div.style.top = `${pos[1]}px`;
+        div.style.borderColor = getSeverityColor(alert.severity);
+
+        const icon = document.createElement('div');
+        icon.className = 'weather-icon';
+        icon.textContent = '⚠';
+        div.appendChild(icon);
+
+        const label = document.createElement('div');
+        label.className = 'weather-label';
+        label.textContent = alert.event;
+        div.appendChild(label);
+
+        div.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const rect = this.container.getBoundingClientRect();
+          this.popup.show({
+            type: 'weather',
+            data: alert,
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+          });
+        });
+
+        this.overlays.appendChild(div);
+      });
+    }
   }
 
   private renderWaterways(projection: d3.GeoProjection): void {
@@ -776,6 +817,11 @@ export class MapComponent {
 
   public setEarthquakes(earthquakes: Earthquake[]): void {
     this.earthquakes = earthquakes;
+    this.render();
+  }
+
+  public setWeatherAlerts(alerts: WeatherAlert[]): void {
+    this.weatherAlerts = alerts;
     this.render();
   }
 

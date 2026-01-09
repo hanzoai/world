@@ -1,10 +1,11 @@
 import type { ConflictZone, Hotspot, Earthquake, NewsItem } from '@/types';
+import type { WeatherAlert } from '@/services/weather';
 
-export type PopupType = 'conflict' | 'hotspot' | 'earthquake';
+export type PopupType = 'conflict' | 'hotspot' | 'earthquake' | 'weather';
 
 interface PopupData {
   type: PopupType;
-  data: ConflictZone | Hotspot | Earthquake;
+  data: ConflictZone | Hotspot | Earthquake | WeatherAlert;
   relatedNews?: NewsItem[];
   x: number;
   y: number;
@@ -72,6 +73,8 @@ export class MapPopup {
         return this.renderHotspotPopup(data.data as Hotspot, data.relatedNews);
       case 'earthquake':
         return this.renderEarthquakePopup(data.data as Earthquake);
+      case 'weather':
+        return this.renderWeatherPopup(data.data as WeatherAlert);
       default:
         return '';
     }
@@ -217,5 +220,41 @@ export class MapPopup {
     if (hours < 24) return `${hours}h ago`;
     const days = Math.floor(hours / 24);
     return `${days}d ago`;
+  }
+
+  private renderWeatherPopup(alert: WeatherAlert): string {
+    const severityClass = alert.severity.toLowerCase();
+    const expiresIn = this.getTimeUntil(alert.expires);
+
+    return `
+      <div class="popup-header weather ${severityClass}">
+        <span class="popup-title">${alert.event.toUpperCase()}</span>
+        <span class="popup-badge ${severityClass}">${alert.severity.toUpperCase()}</span>
+        <button class="popup-close">×</button>
+      </div>
+      <div class="popup-body">
+        <p class="popup-headline">${alert.headline}</p>
+        <div class="popup-stats">
+          <div class="popup-stat">
+            <span class="stat-label">Area</span>
+            <span class="stat-value">${alert.areaDesc}</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">Expires</span>
+            <span class="stat-value">${expiresIn}</span>
+          </div>
+        </div>
+        <p class="popup-description">${alert.description.slice(0, 300)}${alert.description.length > 300 ? '...' : ''}</p>
+      </div>
+    `;
+  }
+
+  private getTimeUntil(date: Date): string {
+    const ms = date.getTime() - Date.now();
+    if (ms <= 0) return 'Expired';
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    if (hours < 1) return `${Math.floor(ms / (1000 * 60))}m`;
+    if (hours < 24) return `${hours}h`;
+    return `${Math.floor(hours / 24)}d`;
   }
 }

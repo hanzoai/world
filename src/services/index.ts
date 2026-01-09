@@ -6,3 +6,4 @@ export * from './clustering';
 export * from './velocity';
 export * from './storage';
 export * from './correlation';
+export * from './weather';

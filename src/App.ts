@@ -10,7 +10,7 @@ import {
   DEFAULT_MAP_LAYERS,
   STORAGE_KEYS,
 } from '@/config';
-import { fetchCategoryFeeds, fetchMultipleStocks, fetchCrypto, fetchPredictions, fetchEarthquakes, initDB, updateBaseline, calculateDeviation, analyzeCorrelations, clusterNews, addToSignalHistory, saveSnapshot, cleanOldSnapshots } from '@/services';
+import { fetchCategoryFeeds, fetchMultipleStocks, fetchCrypto, fetchPredictions, fetchEarthquakes, fetchWeatherAlerts, initDB, updateBaseline, calculateDeviation, analyzeCorrelations, clusterNews, addToSignalHistory, saveSnapshot, cleanOldSnapshots } from '@/services';
 import { loadFromStorage, saveToStorage, ExportPanel } from '@/utils';
 import {
   MapComponent,
@@ -506,6 +506,7 @@ export class App {
       this.loadMarkets(),
       this.loadPredictions(),
       this.loadEarthquakes(),
+      this.loadWeatherAlerts(),
     ]);
   }
 
@@ -639,6 +640,16 @@ export class App {
     }
   }
 
+  private async loadWeatherAlerts(): Promise<void> {
+    try {
+      const alerts = await fetchWeatherAlerts();
+      this.map?.setWeatherAlerts(alerts);
+      this.statusPanel?.updateFeed('Weather', { status: 'ok', itemCount: alerts.length });
+    } catch {
+      this.statusPanel?.updateFeed('Weather', { status: 'error' });
+    }
+  }
+
   private updateMonitorResults(): void {
     const monitorPanel = this.panels['monitors'] as MonitorPanel;
     monitorPanel.renderResults(this.allNews);
@@ -666,5 +677,6 @@ export class App {
     setInterval(() => this.loadMarkets(), REFRESH_INTERVALS.markets);
     setInterval(() => this.loadPredictions(), REFRESH_INTERVALS.predictions);
     setInterval(() => this.loadEarthquakes(), 5 * 60 * 1000);
+    setInterval(() => this.loadWeatherAlerts(), 10 * 60 * 1000);
   }
 }

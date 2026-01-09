@@ -28,6 +28,7 @@ export const DEFAULT_MAP_LAYERS: MapLayers = {
   nuclear: true,
   sanctions: true,
   earthquakes: true,
+  weather: true,
 };
 
 export const MONITOR_COLORS = [
