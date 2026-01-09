@@ -1,0 +1,119 @@
+import type { CorrelationSignal } from '@/services/correlation';
+
+export class SignalModal {
+  private element: HTMLElement;
+  private currentSignals: CorrelationSignal[] = [];
+  private audioEnabled = true;
+  private audio: HTMLAudioElement | null = null;
+
+  constructor() {
+    this.element = document.createElement('div');
+    this.element.className = 'signal-modal-overlay';
+    this.element.innerHTML = `
+      <div class="signal-modal">
+        <div class="signal-modal-header">
+          <span class="signal-modal-title">⚡ SIGNAL DETECTED</span>
+          <button class="signal-modal-close">×</button>
+        </div>
+        <div class="signal-modal-content"></div>
+        <div class="signal-modal-footer">
+          <label class="signal-audio-toggle">
+            <input type="checkbox" checked>
+            <span>Sound alerts</span>
+          </label>
+          <button class="signal-dismiss-btn">Dismiss</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(this.element);
+    this.setupEventListeners();
+    this.initAudio();
+  }
+
+  private initAudio(): void {
+    this.audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleQYjfKapmWswEjCJvuPQfSoXZZ+3qqBJESSP0unGaxMJVYiytrFeLhR6p8znrFUXRW+bs7V3Qx1hn8Xjp1cYPnegprhkMCFmoLi1k0sZTYGlqqlUIA==');
+    this.audio.volume = 0.3;
+  }
+
+  private setupEventListeners(): void {
+    this.element.querySelector('.signal-modal-close')?.addEventListener('click', () => {
+      this.hide();
+    });
+
+    this.element.querySelector('.signal-dismiss-btn')?.addEventListener('click', () => {
+      this.hide();
+    });
+
+    this.element.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).classList.contains('signal-modal-overlay')) {
+        this.hide();
+      }
+    });
+
+    const checkbox = this.element.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    checkbox?.addEventListener('change', () => {
+      this.audioEnabled = checkbox.checked;
+    });
+  }
+
+  public show(signals: CorrelationSignal[]): void {
+    if (signals.length === 0) return;
+
+    this.currentSignals = signals;
+    this.renderSignals();
+    this.element.classList.add('active');
+
+    if (this.audioEnabled && this.audio) {
+      this.audio.play().catch(() => {});
+    }
+
+    // Flash header
+    document.querySelector('.header')?.classList.add('signal-flash');
+    setTimeout(() => {
+      document.querySelector('.header')?.classList.remove('signal-flash');
+    }, 2000);
+  }
+
+  public hide(): void {
+    this.element.classList.remove('active');
+  }
+
+  private renderSignals(): void {
+    const content = this.element.querySelector('.signal-modal-content')!;
+
+    const signalTypeLabels: Record<string, string> = {
+      'prediction_leads_news': '🔮 Prediction Leading',
+      'news_leads_markets': '📰 News Leading',
+      'silent_divergence': '📊 Silent Divergence',
+      'velocity_spike': '🔥 Velocity Spike',
+    };
+
+    const html = this.currentSignals.map(signal => `
+      <div class="signal-item ${signal.type}">
+        <div class="signal-type">${signalTypeLabels[signal.type] || signal.type}</div>
+        <div class="signal-title">${signal.title}</div>
+        <div class="signal-description">${signal.description}</div>
+        <div class="signal-meta">
+          <span class="signal-confidence">Confidence: ${Math.round(signal.confidence * 100)}%</span>
+          <span class="signal-time">${this.formatTime(signal.timestamp)}</span>
+        </div>
+        ${signal.data.relatedTopics?.length ? `
+          <div class="signal-topics">
+            ${signal.data.relatedTopics.map(t => `<span class="signal-topic">${t}</span>`).join('')}
+          </div>
+        ` : ''}
+      </div>
+    `).join('');
+
+    content.innerHTML = html;
+  }
+
+  private formatTime(date: Date): string {
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  public getElement(): HTMLElement {
+    return this.element;
+  }
+}

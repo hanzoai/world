@@ -356,6 +356,306 @@ body {
   margin-top: 4px;
 }
 
+/* Clustering */
+.source-count {
+  background: var(--accent);
+  color: var(--bg);
+  padding: 1px 5px;
+  font-size: 8px;
+  font-weight: bold;
+  border-radius: 8px;
+}
+
+.cluster-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  gap: 8px;
+}
+
+.top-sources {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.top-source {
+  font-size: 8px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  background: var(--panel-border);
+  color: var(--text-dim);
+}
+
+.top-source.tier-1 {
+  background: rgba(0, 255, 136, 0.15);
+  color: var(--green);
+}
+
+.top-source.tier-2 {
+  background: rgba(0, 170, 255, 0.15);
+  color: var(--accent);
+}
+
+.top-source.tier-3 {
+  background: rgba(255, 170, 0, 0.15);
+  color: var(--yellow);
+}
+
+.item.clustered {
+  border-left: 2px solid var(--panel-border);
+  padding-left: 8px;
+  margin-left: -8px;
+}
+
+.item.clustered:hover {
+  border-left-color: var(--accent);
+}
+
+/* Velocity */
+.velocity-badge {
+  font-size: 8px;
+  padding: 1px 5px;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+.velocity-badge.elevated {
+  background: rgba(255, 170, 0, 0.2);
+  color: var(--yellow);
+}
+
+.velocity-badge.spike {
+  background: rgba(255, 68, 68, 0.2);
+  color: var(--red);
+  animation: pulse-velocity 1.5s infinite;
+}
+
+@keyframes pulse-velocity {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Sentiment */
+.sentiment-badge {
+  font-size: 9px;
+  padding: 0 3px;
+}
+
+.sentiment-badge.negative {
+  color: var(--red);
+}
+
+.sentiment-badge.positive {
+  color: var(--green);
+}
+
+/* Deviation indicators */
+.deviation-indicator {
+  font-size: 9px;
+  font-weight: bold;
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+
+.deviation-indicator.elevated {
+  background: rgba(255, 170, 0, 0.2);
+  color: var(--yellow);
+}
+
+.deviation-indicator.spike {
+  background: rgba(255, 68, 68, 0.2);
+  color: var(--red);
+  animation: pulse-alert 1s infinite;
+}
+
+.deviation-indicator.quiet {
+  background: rgba(100, 100, 100, 0.2);
+  color: var(--text-dim);
+}
+
+/* Signal Modal */
+.signal-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.signal-modal-overlay.active {
+  display: flex;
+}
+
+.signal-modal {
+  background: var(--panel-bg);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow: hidden;
+  box-shadow: 0 0 30px rgba(0, 170, 255, 0.3);
+  animation: signal-pulse 0.5s ease-out;
+}
+
+@keyframes signal-pulse {
+  0% { transform: scale(0.9); opacity: 0; }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.signal-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.signal-modal-title {
+  font-weight: bold;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+.signal-modal-close {
+  background: none;
+  border: none;
+  color: var(--bg);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.signal-modal-content {
+  padding: 16px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.signal-item {
+  padding: 12px;
+  margin-bottom: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-left: 3px solid var(--accent);
+  border-radius: 2px;
+}
+
+.signal-item:last-child {
+  margin-bottom: 0;
+}
+
+.signal-item.velocity_spike {
+  border-left-color: var(--red);
+}
+
+.signal-item.prediction_leads_news {
+  border-left-color: var(--yellow);
+}
+
+.signal-item.silent_divergence {
+  border-left-color: var(--green);
+}
+
+.signal-type {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.signal-title {
+  font-weight: bold;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.signal-description {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.signal-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.signal-confidence {
+  color: var(--accent);
+}
+
+.signal-topics {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.signal-topic {
+  font-size: 9px;
+  padding: 2px 6px;
+  background: rgba(0, 170, 255, 0.15);
+  color: var(--accent);
+  border-radius: 8px;
+}
+
+.signal-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-top: 1px solid var(--panel-border);
+}
+
+.signal-audio-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.signal-dismiss-btn {
+  background: var(--accent);
+  border: none;
+  color: var(--bg);
+  padding: 6px 16px;
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.signal-dismiss-btn:hover {
+  opacity: 0.9;
+}
+
+/* Header flash for signals */
+.header.signal-flash {
+  animation: header-flash 0.5s ease-out 3;
+}
+
+@keyframes header-flash {
+  0%, 100% { background: var(--panel-bg); }
+  50% { background: rgba(0, 170, 255, 0.3); }
+}
+
 /* Map */
 .map-container {
   width: 100%;

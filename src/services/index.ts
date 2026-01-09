@@ -2,3 +2,7 @@ export * from './rss';
 export * from './markets';
 export * from './polymarket';
 export * from './earthquakes';
+export * from './clustering';
+export * from './velocity';
+export * from './storage';
+export * from './correlation';

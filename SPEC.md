@@ -1,7 +1,7 @@
 # World Monitor Enhancement Specification
 
 **Author:** Elie Habib
-**Version:** 2.0
+**Version:** 2.1
 **Date:** January 2026
 
 ---
@@ -226,6 +226,115 @@ interface DashboardSnapshot {
 
 ---
 
+## Additional Data Sources & Map Overlays
+
+Based on analysis of existing geopolitical dashboards, the following data sources can enhance World Monitor's coverage:
+
+### 11. Weather Alerts Overlay (Map-Plottable)
+
+**Source:** National Weather Service API
+**Endpoint:** `https://api.weather.gov/alerts/active?status=actual&severity=Extreme,Severe`
+
+**Value Proposition:**
+- Extreme weather events (hurricanes, severe storms, wildfires) correlate with market movements
+- GeoJSON format with polygon coordinates → direct map plotting
+- Real-time severity levels: Extreme, Severe, Moderate, Minor
+- Free, no API key required, high reliability
+
+**Data Model:**
+```typescript
+interface WeatherAlert {
+  id: string;
+  event: string;           // "Hurricane Warning", "Severe Thunderstorm"
+  severity: 'Extreme' | 'Severe' | 'Moderate' | 'Minor';
+  headline: string;
+  description: string;
+  geometry: GeoJSON.Polygon;
+  effective: Date;
+  expires: Date;
+  areaDesc: string;        // "Miami-Dade County"
+}
+```
+
+**Map Integration:**
+- Plot alert polygons with severity-based color coding
+- Red: Extreme | Orange: Severe | Yellow: Moderate
+- Click for full alert details
+- Auto-expire alerts past their `expires` timestamp
+
+### 12. Federal Reserve Economic Data (FRED)
+
+**Source:** Federal Reserve Bank of St. Louis
+**Endpoint:** `https://fred.stlouisfed.org/graph/fredgraph.csv?id=WALCL`
+
+**Key Series to Track:**
+| Series ID | Description | Relevance |
+|-----------|-------------|-----------|
+| WALCL | Fed Total Assets | Liquidity indicator |
+| FEDFUNDS | Federal Funds Rate | Interest rate policy |
+| T10Y2Y | 10Y-2Y Treasury Spread | Recession indicator |
+| UNRATE | Unemployment Rate | Labor market |
+| CPIAUCSL | Consumer Price Index | Inflation |
+
+**Value Proposition:**
+- Leading economic indicators
+- Correlate with market movements
+- Weekly/monthly updates
+- Free, no API key required
+
+**Integration:**
+- Display key indicators in dedicated panel
+- Alert on significant changes (>0.5% for rates, >$50B for Fed assets)
+- Historical chart on hover
+
+### 13. Official Government Feeds
+
+**Sources:**
+| Source | Endpoint | Update Frequency |
+|--------|----------|------------------|
+| State Department | `https://www.state.gov/rss-feed/press-releases/feed/` | Daily |
+| White House | `https://www.whitehouse.gov/news/feed/` | Daily |
+| Pentagon (DOD) | `https://www.defense.gov/DesktopModules/ArticleCS/RSS.ashx` | Daily |
+
+**Value Proposition:**
+- Official government positions before media interpretation
+- Policy announcements, sanctions, diplomatic statements
+- Tier 1 authority for geopolitical events
+
+**Source Tier:** Tier 1.5 (between Wire Services and Major Outlets)
+
+### 14. Tech Industry News
+
+**Sources:**
+| Source | Endpoint | Focus |
+|--------|----------|-------|
+| OpenAI News | `https://openai.com/news/rss.xml` | AI developments |
+| TechCrunch | Existing | Startups, funding |
+| Ars Technica | `https://feeds.arstechnica.com/arstechnica/index` | Tech policy |
+
+**Value Proposition:**
+- AI developments increasingly geopolitically relevant
+- Tech policy intersects with US-China relations
+- Cybersecurity incidents
+
+### 15. Reuters Taxonomy Feeds
+
+**Sources:**
+```
+https://www.reutersagency.com/feed/?best-topics=political-general
+https://www.reutersagency.com/feed/?best-topics=business-finance
+https://www.reutersagency.com/feed/?best-topics=tech
+https://www.reutersagency.com/feed/?taxonomy=best-regions&post_type=best
+```
+
+**Value Proposition:**
+- Reuters is Tier 1 wire service
+- Pre-categorized by topic (political, finance, tech)
+- Regional taxonomy for geographic filtering
+- High signal-to-noise ratio
+
+---
+
 ## Architecture Considerations
 
 ### Performance
@@ -240,23 +349,31 @@ Given "prioritize responsiveness" requirement:
 ### Data Flow
 
 ```
-[RSS Feeds] ──┐
-[Yahoo API] ──┤
-[Polymarket] ─┼──▶ [Fetch Layer] ──▶ [Clustering Engine] ──▶ [Velocity Tracker]
-[CoinGecko] ──┤         │                    │                      │
-[USGS] ───────┘         │                    │                      │
-                        ▼                    ▼                      ▼
-                 [Raw Storage]     [Clustered Events]      [Baseline Store]
-                        │                    │                      │
-                        └────────────────────┼──────────────────────┘
-                                             ▼
-                                   [Correlation Engine]
-                                             │
-                                             ▼
-                                   [Signal Detection] ──▶ [Alert Modal]
-                                             │
-                                             ▼
-                                      [Render Layer]
+[RSS Feeds] ──────┐
+[Yahoo API] ──────┤
+[Polymarket] ─────┤
+[CoinGecko] ──────┼──▶ [Fetch Layer] ──▶ [Clustering Engine] ──▶ [Velocity Tracker]
+[USGS] ───────────┤         │                    │                      │
+[Weather.gov] ────┤         │                    │                      │
+[FRED] ───────────┤         ▼                    ▼                      ▼
+[Gov Feeds] ──────┘  [Raw Storage]     [Clustered Events]      [Baseline Store]
+                            │                    │                      │
+                            └────────────────────┼──────────────────────┘
+                                                 ▼
+                                       [Correlation Engine]
+                                                 │
+                                                 ▼
+                                       [Signal Detection] ──▶ [Alert Modal]
+                                                 │
+                                                 ▼
+                                          [Render Layer]
+                                                 │
+                              ┌──────────────────┼──────────────────┐
+                              ▼                  ▼                  ▼
+                     [News Timeline]      [Map + Overlays]   [Market Panel]
+                                          - Hotspots
+                                          - Weather Alerts
+                                          - Earthquake Markers
 ```
 
 ### Storage Schema (IndexedDB)
@@ -292,9 +409,16 @@ worldmonitor_db
 11. Status dashboard
 12. Data export
 
-### Phase 4: Expansion (Nice-to-Have)
-13. Social platform integration
-14. Regional coverage expansion
+### Phase 4: Data Source Expansion
+13. Weather alerts overlay (map-plottable, high value)
+14. Official government feeds (State, White House, DOD)
+15. Reuters taxonomy feeds
+16. FRED economic indicators panel
+
+### Phase 5: Social & Regional (Nice-to-Have)
+17. Social platform integration (Telegram/X)
+18. Regional coverage expansion
+19. Tech industry feeds (OpenAI, Ars Technica)
 
 ---
 

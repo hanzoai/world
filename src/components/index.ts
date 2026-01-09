@@ -5,3 +5,4 @@ export * from './NewsPanel';
 export * from './MarketPanel';
 export * from './PredictionPanel';
 export * from './MonitorPanel';
+export * from './SignalModal';

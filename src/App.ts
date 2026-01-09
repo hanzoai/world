@@ -10,7 +10,7 @@ import {
   DEFAULT_MAP_LAYERS,
   STORAGE_KEYS,
 } from '@/config';
-import { fetchCategoryFeeds, fetchMultipleStocks, fetchCrypto, fetchPredictions, fetchEarthquakes } from '@/services';
+import { fetchCategoryFeeds, fetchMultipleStocks, fetchCrypto, fetchPredictions, fetchEarthquakes, initDB, updateBaseline, calculateDeviation, analyzeCorrelations, clusterNews, addToSignalHistory } from '@/services';
 import { loadFromStorage, saveToStorage } from '@/utils';
 import {
   MapComponent,
@@ -22,7 +22,9 @@ import {
   PredictionPanel,
   MonitorPanel,
   Panel,
+  SignalModal,
 } from '@/components';
+import type { PredictionMarket, MarketData, ClusteredEvent } from '@/types';
 
 export class App {
   private container: HTMLElement;
@@ -33,6 +35,10 @@ export class App {
   private monitors: Monitor[];
   private panelSettings: Record<string, PanelConfig>;
   private mapLayers: MapLayers;
+  private signalModal: SignalModal | null = null;
+  private latestPredictions: PredictionMarket[] = [];
+  private latestMarkets: MarketData[] = [];
+  private latestClusters: ClusteredEvent[] = [];
 
   constructor(containerId: string) {
     const el = document.getElementById(containerId);
@@ -48,7 +54,9 @@ export class App {
   }
 
   public async init(): Promise<void> {
+    await initDB();
     this.renderLayout();
+    this.signalModal = new SignalModal();
     this.setupEventListeners();
     await this.loadAllData();
     this.setupRefreshIntervals();
@@ -403,57 +411,51 @@ export class App {
     ]);
   }
 
+  private async loadNewsCategory(category: string, feeds: typeof FEEDS.politics): Promise<NewsItem[]> {
+    const items = await fetchCategoryFeeds(feeds ?? []);
+    const panel = this.newsPanels[category];
+
+    if (panel) {
+      panel.renderNews(items);
+
+      // Track and calculate baseline deviation
+      const baseline = await updateBaseline(`news:${category}`, items.length);
+      const deviation = calculateDeviation(items.length, baseline);
+      panel.setDeviation(deviation.zScore, deviation.percentChange, deviation.level);
+    }
+
+    return items;
+  }
+
   private async loadNews(): Promise<void> {
     this.allNews = [];
 
-    // Politics
-    const politics = await fetchCategoryFeeds(FEEDS.politics ?? []);
-    this.newsPanels['politics']?.renderNews(politics);
-    this.allNews.push(...politics);
+    const categories = [
+      { key: 'politics', feeds: FEEDS.politics },
+      { key: 'tech', feeds: FEEDS.tech },
+      { key: 'finance', feeds: FEEDS.finance },
+      { key: 'gov', feeds: FEEDS.gov },
+      { key: 'middleeast', feeds: FEEDS.middleeast },
+      { key: 'layoffs', feeds: FEEDS.layoffs },
+      { key: 'congress', feeds: FEEDS.congress },
+      { key: 'ai', feeds: FEEDS.ai },
+      { key: 'thinktanks', feeds: FEEDS.thinktanks },
+    ];
 
-    // Tech
-    const tech = await fetchCategoryFeeds(FEEDS.tech ?? []);
-    this.newsPanels['tech']?.renderNews(tech);
-    this.allNews.push(...tech);
+    for (const { key, feeds } of categories) {
+      const items = await this.loadNewsCategory(key, feeds);
+      this.allNews.push(...items);
+    }
 
-    // Finance
-    const finance = await fetchCategoryFeeds(FEEDS.finance ?? []);
-    this.newsPanels['finance']?.renderNews(finance);
-    this.allNews.push(...finance);
-
-    // Gov
-    const gov = await fetchCategoryFeeds(FEEDS.gov ?? []);
-    this.newsPanels['gov']?.renderNews(gov);
-    this.allNews.push(...gov);
-
-    // Middle East
-    const middleeast = await fetchCategoryFeeds(FEEDS.middleeast ?? []);
-    this.newsPanels['middleeast']?.renderNews(middleeast);
-    this.allNews.push(...middleeast);
-
-    // Layoffs
-    const layoffs = await fetchCategoryFeeds(FEEDS.layoffs ?? []);
-    this.newsPanels['layoffs']?.renderNews(layoffs);
-    this.allNews.push(...layoffs);
-
-    // Congress Trades
-    const congress = await fetchCategoryFeeds(FEEDS.congress ?? []);
-    this.newsPanels['congress']?.renderNews(congress);
-    this.allNews.push(...congress);
-
-    // AI / ML
-    const ai = await fetchCategoryFeeds(FEEDS.ai ?? []);
-    this.newsPanels['ai']?.renderNews(ai);
-    this.allNews.push(...ai);
-
-    // Think Tanks
-    const thinktanks = await fetchCategoryFeeds(FEEDS.thinktanks ?? []);
-    this.newsPanels['thinktanks']?.renderNews(thinktanks);
-    this.allNews.push(...thinktanks);
-
-    // Intel
+    // Intel (uses different source)
     const intel = await fetchCategoryFeeds(INTEL_SOURCES);
-    this.newsPanels['intel']?.renderNews(intel);
+    const intelPanel = this.newsPanels['intel'];
+    if (intelPanel) {
+      intelPanel.renderNews(intel);
+      const baseline = await updateBaseline('news:intel', intel.length);
+      const deviation = calculateDeviation(intel.length, baseline);
+      intelPanel.setDeviation(deviation.zScore, deviation.percentChange, deviation.level);
+    }
     this.allNews.push(...intel);
 
     // Update map hotspots
@@ -461,11 +463,15 @@ export class App {
 
     // Update monitors
     this.updateMonitorResults();
+
+    // Update clusters for correlation analysis
+    this.latestClusters = clusterNews(this.allNews);
   }
 
   private async loadMarkets(): Promise<void> {
     // Stocks
     const stocks = await fetchMultipleStocks(MARKET_SYMBOLS);
+    this.latestMarkets = stocks;
     (this.panels['markets'] as MarketPanel).renderMarkets(stocks);
 
     // Sectors
@@ -487,7 +493,9 @@ export class App {
 
   private async loadPredictions(): Promise<void> {
     const predictions = await fetchPredictions();
+    this.latestPredictions = predictions;
     (this.panels['polymarket'] as PredictionPanel).renderPredictions(predictions);
+    this.runCorrelationAnalysis();
   }
 
   private async loadEarthquakes(): Promise<void> {
@@ -498,6 +506,23 @@ export class App {
   private updateMonitorResults(): void {
     const monitorPanel = this.panels['monitors'] as MonitorPanel;
     monitorPanel.renderResults(this.allNews);
+  }
+
+  private runCorrelationAnalysis(): void {
+    if (this.latestClusters.length === 0) {
+      this.latestClusters = clusterNews(this.allNews);
+    }
+
+    const signals = analyzeCorrelations(
+      this.latestClusters,
+      this.latestPredictions,
+      this.latestMarkets
+    );
+
+    if (signals.length > 0) {
+      addToSignalHistory(signals);
+      this.signalModal?.show(signals);
+    }
   }
 
   private setupRefreshIntervals(): void {

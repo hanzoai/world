@@ -1,5 +1,55 @@
 import type { Feed } from '@/types';
 
+// Source tier system for prioritization (lower = more authoritative)
+// Tier 1: Wire services - fastest, most reliable breaking news
+// Tier 2: Major outlets - high-quality journalism
+// Tier 3: Specialty sources - domain expertise
+// Tier 4: Aggregators & blogs - useful but less authoritative
+export const SOURCE_TIERS: Record<string, number> = {
+  // Tier 1 - Wire Services
+  'Reuters': 1,
+  'AP News': 1,
+  'AFP': 1,
+  'Bloomberg': 1,
+
+  // Tier 2 - Major Outlets
+  'BBC World': 2,
+  'BBC Middle East': 2,
+  'Guardian World': 2,
+  'Guardian ME': 2,
+  'NPR News': 2,
+  'CNN Middle East': 2,
+  'CNBC': 2,
+  'MarketWatch': 2,
+  'Al Jazeera': 2,
+
+  // Tier 3 - Specialty
+  'Defense One': 3,
+  'Breaking Defense': 3,
+  'The War Zone': 3,
+  'Foreign Policy': 3,
+  'The Diplomat': 3,
+  'Bellingcat': 3,
+  'Krebs Security': 3,
+  'Federal Reserve': 3,
+  'SEC': 3,
+  'MIT Tech Review': 3,
+  'Ars Technica': 3,
+
+  // Tier 4 - Aggregators
+  'Hacker News': 4,
+  'The Verge': 4,
+  'VentureBeat AI': 4,
+  'Yahoo Finance': 4,
+  'TechCrunch Layoffs': 4,
+  'Hugging Face': 4,
+  'ArXiv AI': 4,
+};
+
+export function getSourceTier(sourceName: string): number {
+  return SOURCE_TIERS[sourceName] ?? 4; // Default to tier 4 if unknown
+}
+
 export const FEEDS: Record<string, Feed[]> = {
   politics: [
     { name: 'BBC World', url: '/rss/bbc/news/world/rss.xml' },

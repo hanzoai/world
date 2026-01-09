@@ -12,6 +12,34 @@ export interface NewsItem {
   pubDate: Date;
   isAlert: boolean;
   monitorColor?: string;
+  tier?: number;
+}
+
+export type VelocityLevel = 'normal' | 'elevated' | 'spike';
+export type SentimentType = 'negative' | 'neutral' | 'positive';
+export type DeviationLevel = 'normal' | 'elevated' | 'spike' | 'quiet';
+
+export interface VelocityMetrics {
+  sourcesPerHour: number;
+  level: VelocityLevel;
+  trend: 'rising' | 'stable' | 'falling';
+  sentiment: SentimentType;
+  sentimentScore: number;
+}
+
+export interface ClusteredEvent {
+  id: string;
+  primaryTitle: string;
+  primarySource: string;
+  primaryLink: string;
+  sourceCount: number;
+  topSources: Array<{ name: string; tier: number; url: string }>;
+  allItems: NewsItem[];
+  firstSeen: Date;
+  lastUpdated: Date;
+  isAlert: boolean;
+  monitorColor?: string;
+  velocity?: VelocityMetrics;
 }
 
 export interface Sector {
