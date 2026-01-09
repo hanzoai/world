@@ -101,12 +101,28 @@ export class App {
   private setupEconomicPanel(): void {
     const economicContainer = document.createElement('div');
     economicContainer.className = 'economic-panel-container';
+    economicContainer.id = 'economicPanel';
     this.economicPanel = new EconomicPanel(economicContainer);
+
+    // Apply initial visibility from layer settings
+    if (!this.mapLayers.economic) {
+      economicContainer.classList.add('hidden');
+    }
 
     const main = this.container.querySelector('.main');
     if (main) {
       main.appendChild(economicContainer);
     }
+
+    // Listen for layer toggle changes
+    this.map?.setOnLayerChange((layer, enabled) => {
+      if (layer === 'economic') {
+        economicContainer.classList.toggle('hidden', !enabled);
+      }
+      // Save layer settings
+      this.mapLayers[layer] = enabled;
+      saveToStorage(STORAGE_KEYS.mapLayers, this.mapLayers);
+    });
   }
 
   private setupPlaybackControl(): void {

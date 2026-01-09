@@ -37,13 +37,9 @@ export class SignalModal {
   private createSignalBadge(): void {
     this.signalBadge = document.createElement('button');
     this.signalBadge.className = 'signal-badge hidden';
+    this.signalBadge.title = 'Signal notifications';
     this.signalBadge.innerHTML = '<span class="signal-badge-icon">⚡</span><span class="signal-badge-count">0</span>';
-    this.signalBadge.addEventListener('click', () => {
-      if (this.currentSignals.length > 0) {
-        this.renderSignals();
-        this.element.classList.add('active');
-      }
-    });
+    this.signalBadge.addEventListener('click', () => this.openModal());
 
     const headerRight = document.querySelector('.header-right');
     if (headerRight) {
@@ -80,26 +76,25 @@ export class SignalModal {
   public show(signals: CorrelationSignal[]): void {
     if (signals.length === 0) return;
 
-    this.currentSignals = signals;
-    this.pendingCount = signals.length;
+    this.currentSignals = [...signals, ...this.currentSignals].slice(0, 50);
+    this.pendingCount += signals.length;
     this.updateBadge();
-    this.renderSignals();
-    this.element.classList.add('active');
 
     if (this.audioEnabled && this.audio) {
       this.audio.currentTime = 0;
       this.audio.play().catch(() => {});
     }
 
-    // Flash header
-    const header = document.querySelector('.header');
-    header?.classList.add('signal-flash');
-    setTimeout(() => header?.classList.remove('signal-flash'), 2000);
+    // Subtle pulse on badge instead of modal popup
+    this.signalBadge?.classList.add('pulse');
+    setTimeout(() => this.signalBadge?.classList.remove('pulse'), 1000);
+  }
 
-    // Pulse status indicator
-    const statusDot = document.querySelector('.status-dot');
-    statusDot?.classList.add('signal-pulse');
-    setTimeout(() => statusDot?.classList.remove('signal-pulse'), 5000);
+  public openModal(): void {
+    if (this.currentSignals.length > 0) {
+      this.renderSignals();
+      this.element.classList.add('active');
+    }
   }
 
   private updateBadge(): void {

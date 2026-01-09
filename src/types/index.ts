@@ -194,6 +194,7 @@ export interface MapLayers {
   sanctions: boolean;
   earthquakes: boolean;
   weather: boolean;
+  economic: boolean;
 }
 
 export interface PredictionMarket {

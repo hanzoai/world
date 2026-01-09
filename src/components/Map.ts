@@ -59,6 +59,7 @@ export class MapComponent {
   private popup: MapPopup;
   private onHotspotClick?: (hotspot: Hotspot) => void;
   private onTimeRangeChange?: (range: TimeRange) => void;
+  private onLayerChange?: (layer: keyof MapLayers, enabled: boolean) => void;
 
   constructor(container: HTMLElement, initialState: MapState) {
     this.container = container;
@@ -185,7 +186,7 @@ export class MapComponent {
     toggles.className = 'layer-toggles';
     toggles.id = 'layerToggles';
 
-    const layers: (keyof MapLayers)[] = ['conflicts', 'bases', 'cables', 'hotspots', 'earthquakes', 'weather', 'nuclear', 'sanctions'];
+    const layers: (keyof MapLayers)[] = ['conflicts', 'bases', 'cables', 'hotspots', 'earthquakes', 'weather', 'nuclear', 'sanctions', 'economic'];
 
     layers.forEach((layer) => {
       const btn = document.createElement('button');
@@ -776,7 +777,12 @@ export class MapComponent {
     const btn = document.querySelector(`[data-layer="${layer}"]`);
     btn?.classList.toggle('active');
 
+    this.onLayerChange?.(layer, this.state.layers[layer]);
     this.render();
+  }
+
+  public setOnLayerChange(callback: (layer: keyof MapLayers, enabled: boolean) => void): void {
+    this.onLayerChange = callback;
   }
 
   public zoomIn(): void {

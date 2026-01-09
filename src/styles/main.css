@@ -1941,6 +1941,15 @@ body.playback-mode .status-dot {
   50% { box-shadow: 0 0 8px 4px rgba(0, 170, 255, 0.6); }
 }
 
+.signal-badge.pulse {
+  animation: new-signal-pulse 0.3s ease-out 3;
+}
+
+@keyframes new-signal-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); background: rgba(0, 170, 255, 0.5); }
+}
+
 /* Signal Pulse on Status Dot */
 .status-dot.signal-pulse {
   animation: signal-dot-pulse 0.5s ease-out 6;
@@ -2220,6 +2229,10 @@ body.playback-mode .status-dot {
   bottom: 60px;
   right: 12px;
   z-index: 100;
+}
+
+.economic-panel-container.hidden {
+  display: none;
 }
 
 .economic-panel {
