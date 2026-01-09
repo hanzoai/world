@@ -41,6 +41,12 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/earthquake/, ''),
       },
+      // FRED Economic Data
+      '/api/fred': {
+        target: 'https://fred.stlouisfed.org',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/fred/, ''),
+      },
       // RSS Feeds - BBC
       '/rss/bbc': {
         target: 'https://feeds.bbci.co.uk',

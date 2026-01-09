@@ -26,7 +26,7 @@ const FRED_SERIES: FredConfig[] = [
   { id: 'VIXCLS', name: 'VIX', unit: '', precision: 2 },
 ];
 
-const FRED_CSV_BASE = 'https://fred.stlouisfed.org/graph/fredgraph.csv';
+const FRED_CSV_BASE = '/api/fred/graph/fredgraph.csv';
 
 async function fetchSeriesData(seriesId: string): Promise<{ date: string; value: number }[]> {
   try {
@@ -34,7 +34,9 @@ async function fetchSeriesData(seriesId: string): Promise<{ date: string; value:
     const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
     const url = `${FRED_CSV_BASE}?id=${seriesId}&cosd=${startDate}&coed=${endDate}`;
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: { 'Accept': 'text/csv' }
+    });
 
     if (!response.ok) return [];
 
@@ -61,9 +63,7 @@ async function fetchSeriesData(seriesId: string): Promise<{ date: string; value:
 }
 
 export async function fetchFredData(): Promise<FredSeries[]> {
-  const results: FredSeries[] = [];
-
-  for (const config of FRED_SERIES) {
+  const fetchPromises = FRED_SERIES.map(async (config): Promise<FredSeries | null> => {
     const data = await fetchSeriesData(config.id);
 
     if (data.length >= 2) {
@@ -77,7 +77,7 @@ export async function fetchFredData(): Promise<FredSeries[]> {
         displayValue = latest.value / 1000;
       }
 
-      results.push({
+      return {
         id: config.id,
         name: config.name,
         value: Number(displayValue.toFixed(config.precision)),
@@ -86,7 +86,7 @@ export async function fetchFredData(): Promise<FredSeries[]> {
         changePercent: Number(changePercent.toFixed(2)),
         date: latest.date,
         unit: config.unit,
-      });
+      };
     } else if (data.length === 1) {
       const latest = data[0]!;
       let displayValue = latest.value;
@@ -94,7 +94,7 @@ export async function fetchFredData(): Promise<FredSeries[]> {
         displayValue = latest.value / 1000;
       }
 
-      results.push({
+      return {
         id: config.id,
         name: config.name,
         value: Number(displayValue.toFixed(config.precision)),
@@ -103,11 +103,13 @@ export async function fetchFredData(): Promise<FredSeries[]> {
         changePercent: null,
         date: latest.date,
         unit: config.unit,
-      });
+      };
     }
-  }
+    return null;
+  });
 
-  return results;
+  const results = await Promise.all(fetchPromises);
+  return results.filter((r): r is FredSeries => r !== null);
 }
 
 export function getChangeClass(change: number | null): string {

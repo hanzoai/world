@@ -7,6 +7,7 @@ const PROXY_MAP: Record<string, string> = {
   '/api/coingecko': 'https://api.coingecko.com',
   '/api/polymarket': 'https://gamma-api.polymarket.com',
   '/api/earthquake': 'https://earthquake.usgs.gov',
+  '/api/fred': 'https://fred.stlouisfed.org',
   '/rss/bbc': 'https://feeds.bbci.co.uk',
   '/rss/guardian': 'https://www.theguardian.com',
   '/rss/npr': 'https://feeds.npr.org',
