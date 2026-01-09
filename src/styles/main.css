@@ -1043,6 +1043,25 @@ body.playback-mode .status-dot {
   letter-spacing: 1px;
   text-shadow: 0 0 4px var(--bg), 0 0 8px var(--bg), 0 0 12px var(--bg);
   pointer-events: none;
+  display: none; /* Replaced by HTML overlay */
+}
+
+.conflict-label-overlay {
+  position: absolute;
+  transform: translate(-50%, -50%) scale(var(--label-scale, 1));
+  transform-origin: center;
+  color: var(--red);
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow:
+    0 0 4px var(--bg),
+    0 0 8px var(--bg),
+    0 0 12px var(--bg);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 10;
 }
 
 @keyframes pulse-conflict {

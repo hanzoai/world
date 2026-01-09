@@ -552,19 +552,23 @@ export class MapComponent {
           .append('polygon')
           .attr('class', 'conflict-zone')
           .attr('points', points.map((p) => p.join(',')).join(' '));
-
-        const centerPos = projection(zone.center as [number, number]);
-        if (centerPos) {
-          conflictGroup
-            .append('text')
-            .attr('class', 'conflict-label')
-            .attr('x', centerPos[0])
-            .attr('y', centerPos[1])
-            .attr('text-anchor', 'middle')
-            .attr('dominant-baseline', 'middle')
-            .text(zone.name);
-        }
+        // Labels are now rendered as HTML overlays in renderConflictLabels()
       }
+    });
+  }
+
+  private renderConflictLabels(projection: d3.GeoProjection): void {
+    CONFLICT_ZONES.forEach((zone) => {
+      const centerPos = projection(zone.center as [number, number]);
+      if (!centerPos) return;
+
+      const div = document.createElement('div');
+      div.className = 'conflict-label-overlay';
+      div.style.left = `${centerPos[0]}px`;
+      div.style.top = `${centerPos[1]}px`;
+      div.textContent = zone.name;
+
+      this.overlays.appendChild(div);
     });
   }
 
@@ -597,6 +601,11 @@ export class MapComponent {
     // Country labels (rendered first so they appear behind other overlays)
     if (this.state.layers.countries) {
       this.renderCountryLabels(projection);
+    }
+
+    // Conflict zone labels (HTML overlay with counter-scaling)
+    if (this.state.layers.conflicts) {
+      this.renderConflictLabels(projection);
     }
 
     // Strategic waterways
