@@ -52,7 +52,7 @@ export const MONITOR_COLORS = [
 ];
 
 export const STORAGE_KEYS = {
-  panels: 'situation-monitor-panels',
-  monitors: 'situation-monitor-monitors',
-  mapLayers: 'situation-monitor-layers',
+  panels: 'worldmonitor-panels',
+  monitors: 'worldmonitor-monitors',
+  mapLayers: 'worldmonitor-layers',
 } as const;
