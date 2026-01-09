@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
 import type { Topology, GeometryCollection } from 'topojson-specification';
-import type { MapLayers, Hotspot, NewsItem, Earthquake } from '@/types';
+import type { MapLayers, Hotspot, NewsItem, Earthquake, InternetOutage } from '@/types';
 import type { WeatherAlert } from '@/services/weather';
 import { getSeverityColor } from '@/services/weather';
 import {
@@ -11,10 +11,15 @@ import {
   MILITARY_BASES,
   UNDERSEA_CABLES,
   NUCLEAR_FACILITIES,
+  GAMMA_IRRADIATORS,
+  PIPELINES,
+  PIPELINE_COLORS,
   SANCTIONED_COUNTRIES,
   STRATEGIC_WATERWAYS,
   APT_GROUPS,
   COUNTRY_LABELS,
+  ECONOMIC_CENTERS,
+  AI_DATA_CENTERS,
 } from '@/config';
 import { MapPopup } from './MapPopup';
 
@@ -56,6 +61,7 @@ export class MapComponent {
   private hotspots: HotspotWithBreaking[];
   private earthquakes: Earthquake[] = [];
   private weatherAlerts: WeatherAlert[] = [];
+  private outages: InternetOutage[] = [];
   private news: NewsItem[] = [];
   private popup: MapPopup;
   private onHotspotClick?: (hotspot: Hotspot) => void;
@@ -187,7 +193,7 @@ export class MapComponent {
     toggles.className = 'layer-toggles';
     toggles.id = 'layerToggles';
 
-    const layers: (keyof MapLayers)[] = ['conflicts', 'bases', 'cables', 'hotspots', 'earthquakes', 'weather', 'nuclear', 'sanctions', 'economic', 'countries'];
+    const layers: (keyof MapLayers)[] = ['conflicts', 'bases', 'cables', 'pipelines', 'hotspots', 'earthquakes', 'weather', 'nuclear', 'irradiators', 'outages', 'datacenters', 'sanctions', 'economic', 'countries', 'waterways'];
 
     layers.forEach((layer) => {
       const btn = document.createElement('button');
@@ -413,6 +419,10 @@ export class MapComponent {
       this.renderCables(projection);
     }
 
+    if (this.state.layers.pipelines && showGlobalLayers) {
+      this.renderPipelines(projection);
+    }
+
     if (this.state.layers.conflicts && showGlobalLayers) {
       this.renderConflicts(projection);
     }
@@ -530,12 +540,67 @@ export class MapComponent {
         .y((d) => projection(d)?.[1] ?? 0)
         .curve(d3.curveCardinal);
 
-      cableGroup
+      const path = cableGroup
         .append('path')
         .attr('class', 'cable-path')
-        .attr('d', lineGenerator(cable.points))
-        .append('title')
-        .text(cable.name);
+        .attr('d', lineGenerator(cable.points));
+
+      path.append('title').text(cable.name);
+
+      path.on('click', (event: MouseEvent) => {
+        event.stopPropagation();
+        const rect = this.container.getBoundingClientRect();
+        this.popup.show({
+          type: 'cable',
+          data: cable,
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top,
+        });
+      });
+    });
+  }
+
+  private renderPipelines(projection: d3.GeoProjection): void {
+    const pipelineGroup = this.svg.append('g').attr('class', 'pipelines');
+
+    PIPELINES.forEach((pipeline) => {
+      const lineGenerator = d3
+        .line<[number, number]>()
+        .x((d) => projection(d)?.[0] ?? 0)
+        .y((d) => projection(d)?.[1] ?? 0)
+        .curve(d3.curveCardinal.tension(0.5));
+
+      const color = PIPELINE_COLORS[pipeline.type] || '#888888';
+      const opacity = 0.85;
+      const dashArray = pipeline.status === 'construction' ? '4,2' : 'none';
+
+      const path = pipelineGroup
+        .append('path')
+        .attr('class', `pipeline-path pipeline-${pipeline.type} pipeline-${pipeline.status}`)
+        .attr('d', lineGenerator(pipeline.points))
+        .attr('fill', 'none')
+        .attr('stroke', color)
+        .attr('stroke-width', 2.5)
+        .attr('stroke-opacity', opacity)
+        .attr('stroke-linecap', 'round')
+        .attr('stroke-linejoin', 'round');
+
+      if (dashArray !== 'none') {
+        path.attr('stroke-dasharray', dashArray);
+      }
+
+      path.append('title').text(`${pipeline.name} (${pipeline.type.toUpperCase()})`);
+
+      path.on('click', (event: MouseEvent) => {
+        event.stopPropagation();
+        const rect = this.container.getBoundingClientRect();
+        this.popup.show({
+          type: 'pipeline',
+          data: pipeline,
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top,
+        });
+      });
     });
   }
 
@@ -568,6 +633,17 @@ export class MapComponent {
       div.style.top = `${centerPos[1]}px`;
       div.textContent = zone.name;
 
+      div.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const rect = this.container.getBoundingClientRect();
+        this.popup.show({
+          type: 'conflict',
+          data: zone,
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        });
+      });
+
       this.overlays.appendChild(div);
     });
   }
@@ -596,23 +672,28 @@ export class MapComponent {
   private renderOverlays(projection: d3.GeoProjection): void {
     this.overlays.innerHTML = '';
 
-    if (this.state.view !== 'global' && this.state.view !== 'mena') return;
+    const isGlobalOrMena = this.state.view === 'global' || this.state.view === 'mena';
 
-    // Country labels (rendered first so they appear behind other overlays)
-    if (this.state.layers.countries) {
-      this.renderCountryLabels(projection);
+    // Global/MENA only overlays
+    if (isGlobalOrMena) {
+      // Country labels (rendered first so they appear behind other overlays)
+      if (this.state.layers.countries) {
+        this.renderCountryLabels(projection);
+      }
+
+      // Conflict zone labels (HTML overlay with counter-scaling)
+      if (this.state.layers.conflicts) {
+        this.renderConflictLabels(projection);
+      }
+
+      // Strategic waterways
+      if (this.state.layers.waterways) {
+        this.renderWaterways(projection);
+      }
+
+      // APT groups
+      this.renderAPTMarkers(projection);
     }
-
-    // Conflict zone labels (HTML overlay with counter-scaling)
-    if (this.state.layers.conflicts) {
-      this.renderConflictLabels(projection);
-    }
-
-    // Strategic waterways
-    this.renderWaterways(projection);
-
-    // APT groups
-    this.renderAPTMarkers(projection);
 
     // Nuclear facilities
     if (this.state.layers.nuclear) {
@@ -630,6 +711,49 @@ export class MapComponent {
         label.className = 'nuclear-label';
         label.textContent = facility.name;
         div.appendChild(label);
+
+        div.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const rect = this.container.getBoundingClientRect();
+          this.popup.show({
+            type: 'nuclear',
+            data: facility,
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+          });
+        });
+
+        this.overlays.appendChild(div);
+      });
+    }
+
+    // Gamma irradiators (IAEA DIIF)
+    if (this.state.layers.irradiators) {
+      GAMMA_IRRADIATORS.forEach((irradiator) => {
+        const pos = projection([irradiator.lon, irradiator.lat]);
+        if (!pos) return;
+
+        const div = document.createElement('div');
+        div.className = 'irradiator-marker';
+        div.style.left = `${pos[0]}px`;
+        div.style.top = `${pos[1]}px`;
+        div.title = `${irradiator.city}, ${irradiator.country}`;
+
+        const label = document.createElement('div');
+        label.className = 'irradiator-label';
+        label.textContent = irradiator.city;
+        div.appendChild(label);
+
+        div.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const rect = this.container.getBoundingClientRect();
+          this.popup.show({
+            type: 'irradiator',
+            data: irradiator,
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+          });
+        });
 
         this.overlays.appendChild(div);
       });
@@ -718,17 +842,40 @@ export class MapComponent {
         div.className = `base-marker ${base.type}`;
         div.style.left = `${pos[0]}px`;
         div.style.top = `${pos[1]}px`;
-        div.title = base.name;
+
+        const label = document.createElement('div');
+        label.className = 'base-label';
+        label.textContent = base.name;
+        div.appendChild(label);
+
+        div.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const rect = this.container.getBoundingClientRect();
+          this.popup.show({
+            type: 'base',
+            data: base,
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+          });
+        });
+
         this.overlays.appendChild(div);
       });
     }
 
     // Earthquakes
     if (this.state.layers.earthquakes) {
+      console.log('[Map] Rendering earthquakes. Total:', this.earthquakes.length, 'Layer enabled:', this.state.layers.earthquakes);
       const filteredQuakes = this.filterByTime(this.earthquakes);
+      console.log('[Map] After time filter:', filteredQuakes.length, 'earthquakes. TimeRange:', this.state.timeRange);
+      let rendered = 0;
       filteredQuakes.forEach((eq) => {
         const pos = projection([eq.lon, eq.lat]);
-        if (!pos) return;
+        if (!pos) {
+          console.log('[Map] Earthquake position null for:', eq.place, eq.lon, eq.lat);
+          return;
+        }
+        rendered++;
 
         const size = Math.max(8, eq.magnitude * 3);
         const div = document.createElement('div');
@@ -750,6 +897,43 @@ export class MapComponent {
           this.popup.show({
             type: 'earthquake',
             data: eq,
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+          });
+        });
+
+        this.overlays.appendChild(div);
+      });
+      console.log('[Map] Actually rendered', rendered, 'earthquake markers');
+    }
+
+    // Economic Centers
+    if (this.state.layers.economic) {
+      ECONOMIC_CENTERS.forEach((center) => {
+        const pos = projection([center.lon, center.lat]);
+        if (!pos) return;
+
+        const div = document.createElement('div');
+        div.className = `economic-marker ${center.type}`;
+        div.style.left = `${pos[0]}px`;
+        div.style.top = `${pos[1]}px`;
+
+        const icon = document.createElement('div');
+        icon.className = 'economic-icon';
+        icon.textContent = center.type === 'exchange' ? '📈' : center.type === 'central-bank' ? '🏛' : '💰';
+        div.appendChild(icon);
+
+        const label = document.createElement('div');
+        label.className = 'economic-label';
+        label.textContent = center.name;
+        div.appendChild(label);
+
+        div.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const rect = this.container.getBoundingClientRect();
+          this.popup.show({
+            type: 'economic',
+            data: center,
             x: e.clientX - rect.left,
             y: e.clientY - rect.top,
           });
@@ -796,6 +980,78 @@ export class MapComponent {
         this.overlays.appendChild(div);
       });
     }
+
+    // Internet Outages
+    if (this.state.layers.outages) {
+      this.outages.forEach((outage) => {
+        const pos = projection([outage.lon, outage.lat]);
+        if (!pos) return;
+
+        const div = document.createElement('div');
+        div.className = `outage-marker ${outage.severity}`;
+        div.style.left = `${pos[0]}px`;
+        div.style.top = `${pos[1]}px`;
+
+        const icon = document.createElement('div');
+        icon.className = 'outage-icon';
+        icon.textContent = '📡';
+        div.appendChild(icon);
+
+        const label = document.createElement('div');
+        label.className = 'outage-label';
+        label.textContent = outage.country;
+        div.appendChild(label);
+
+        div.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const rect = this.container.getBoundingClientRect();
+          this.popup.show({
+            type: 'outage',
+            data: outage,
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+          });
+        });
+
+        this.overlays.appendChild(div);
+      });
+    }
+
+    // AI Data Centers
+    if (this.state.layers.datacenters) {
+      AI_DATA_CENTERS.forEach((dc) => {
+        const pos = projection([dc.lon, dc.lat]);
+        if (!pos) return;
+
+        const div = document.createElement('div');
+        div.className = `datacenter-marker ${dc.status}`;
+        div.style.left = `${pos[0]}px`;
+        div.style.top = `${pos[1]}px`;
+
+        const icon = document.createElement('div');
+        icon.className = 'datacenter-icon';
+        icon.textContent = '🖥️';
+        div.appendChild(icon);
+
+        const label = document.createElement('div');
+        label.className = 'datacenter-label';
+        label.textContent = dc.owner;
+        div.appendChild(label);
+
+        div.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const rect = this.container.getBoundingClientRect();
+          this.popup.show({
+            type: 'datacenter',
+            data: dc,
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+          });
+        });
+
+        this.overlays.appendChild(div);
+      });
+    }
   }
 
   private renderCountryLabels(projection: d3.GeoProjection): void {
@@ -820,14 +1076,25 @@ export class MapComponent {
       if (!pos) return;
 
       const div = document.createElement('div');
-      div.className = 'waterway-label';
+      div.className = 'waterway-marker';
       div.style.left = `${pos[0]}px`;
       div.style.top = `${pos[1]}px`;
-      div.innerHTML = `
-        <span class="waterway-name">${waterway.name}</span>
-        ${waterway.description ? `<span class="waterway-desc">${waterway.description}</span>` : ''}
-      `;
-      div.title = waterway.description || waterway.name;
+      div.title = waterway.name;
+
+      const diamond = document.createElement('div');
+      diamond.className = 'waterway-diamond';
+      div.appendChild(diamond);
+
+      div.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const rect = this.container.getBoundingClientRect();
+        this.popup.show({
+          type: 'waterway',
+          data: waterway,
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        });
+      });
 
       this.overlays.appendChild(div);
     });
@@ -846,17 +1113,56 @@ export class MapComponent {
         <div class="apt-icon">⚠</div>
         <div class="apt-label">${apt.name}</div>
       `;
-      div.title = `${apt.name} (${apt.aka}) - ${apt.sponsor}`;
+
+      div.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const rect = this.container.getBoundingClientRect();
+        this.popup.show({
+          type: 'apt',
+          data: apt,
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        });
+      });
 
       this.overlays.appendChild(div);
     });
   }
 
   private getRelatedNews(hotspot: Hotspot): NewsItem[] {
-    return this.news.filter((item) => {
-      const titleLower = item.title.toLowerCase();
-      return hotspot.keywords.some((kw) => titleLower.includes(kw.toLowerCase()));
-    }).slice(0, 5);
+    // High-priority conflict keywords that indicate the news is really about another topic
+    const conflictTopics = ['gaza', 'ukraine', 'russia', 'israel', 'iran', 'china', 'taiwan', 'korea', 'syria'];
+
+    return this.news
+      .map((item) => {
+        const titleLower = item.title.toLowerCase();
+        const matchedKeywords = hotspot.keywords.filter((kw) => titleLower.includes(kw.toLowerCase()));
+
+        if (matchedKeywords.length === 0) return null;
+
+        // Check if this news mentions other hotspot conflict topics
+        const conflictMatches = conflictTopics.filter(t =>
+          titleLower.includes(t) && !hotspot.keywords.some(k => k.toLowerCase().includes(t))
+        );
+
+        // If article mentions a major conflict topic that isn't this hotspot, deprioritize heavily
+        if (conflictMatches.length > 0) {
+          // Only include if it ALSO has a strong local keyword (city name, agency)
+          const strongLocalMatch = matchedKeywords.some(kw =>
+            kw.toLowerCase() === hotspot.name.toLowerCase() ||
+            hotspot.agencies?.some(a => titleLower.includes(a.toLowerCase()))
+          );
+          if (!strongLocalMatch) return null;
+        }
+
+        // Score: more keyword matches = more relevant
+        const score = matchedKeywords.length;
+        return { item, score };
+      })
+      .filter((x): x is { item: NewsItem; score: number } => x !== null)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5)
+      .map(x => x.item);
   }
 
   public updateHotspotActivity(news: NewsItem[]): void {
@@ -955,6 +1261,165 @@ export class MapComponent {
     this.applyTransform();
   }
 
+  public triggerHotspotClick(id: string): void {
+    const hotspot = this.hotspots.find(h => h.id === id);
+    if (!hotspot) return;
+
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+    const projection = this.getProjection(width, height);
+    const pos = projection([hotspot.lon, hotspot.lat]);
+    if (!pos) return;
+
+    const relatedNews = this.getRelatedNews(hotspot);
+    this.popup.show({
+      type: 'hotspot',
+      data: hotspot,
+      relatedNews,
+      x: pos[0],
+      y: pos[1],
+    });
+    this.onHotspotClick?.(hotspot);
+  }
+
+  public triggerConflictClick(id: string): void {
+    const conflict = CONFLICT_ZONES.find(c => c.id === id);
+    if (!conflict) return;
+
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+    const projection = this.getProjection(width, height);
+    const pos = projection(conflict.center as [number, number]);
+    if (!pos) return;
+
+    this.popup.show({
+      type: 'conflict',
+      data: conflict,
+      x: pos[0],
+      y: pos[1],
+    });
+  }
+
+  public triggerBaseClick(id: string): void {
+    const base = MILITARY_BASES.find(b => b.id === id);
+    if (!base) return;
+
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+    const projection = this.getProjection(width, height);
+    const pos = projection([base.lon, base.lat]);
+    if (!pos) return;
+
+    this.popup.show({
+      type: 'base',
+      data: base,
+      x: pos[0],
+      y: pos[1],
+    });
+  }
+
+  public triggerPipelineClick(id: string): void {
+    const pipeline = PIPELINES.find(p => p.id === id);
+    if (!pipeline || pipeline.points.length === 0) return;
+
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+    const projection = this.getProjection(width, height);
+    const midPoint = pipeline.points[Math.floor(pipeline.points.length / 2)] as [number, number];
+    const pos = projection(midPoint);
+    if (!pos) return;
+
+    this.popup.show({
+      type: 'pipeline',
+      data: pipeline,
+      x: pos[0],
+      y: pos[1],
+    });
+  }
+
+  public triggerCableClick(id: string): void {
+    const cable = UNDERSEA_CABLES.find(c => c.id === id);
+    if (!cable || cable.points.length === 0) return;
+
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+    const projection = this.getProjection(width, height);
+    const midPoint = cable.points[Math.floor(cable.points.length / 2)] as [number, number];
+    const pos = projection(midPoint);
+    if (!pos) return;
+
+    this.popup.show({
+      type: 'cable',
+      data: cable,
+      x: pos[0],
+      y: pos[1],
+    });
+  }
+
+  public triggerDatacenterClick(id: string): void {
+    const dc = AI_DATA_CENTERS.find(d => d.id === id);
+    if (!dc) return;
+
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+    const projection = this.getProjection(width, height);
+    const pos = projection([dc.lon, dc.lat]);
+    if (!pos) return;
+
+    this.popup.show({
+      type: 'datacenter',
+      data: dc,
+      x: pos[0],
+      y: pos[1],
+    });
+  }
+
+  public triggerNuclearClick(id: string): void {
+    const facility = NUCLEAR_FACILITIES.find(n => n.id === id);
+    if (!facility) return;
+
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+    const projection = this.getProjection(width, height);
+    const pos = projection([facility.lon, facility.lat]);
+    if (!pos) return;
+
+    this.popup.show({
+      type: 'nuclear',
+      data: facility,
+      x: pos[0],
+      y: pos[1],
+    });
+  }
+
+  public triggerIrradiatorClick(id: string): void {
+    const irradiator = GAMMA_IRRADIATORS.find(i => i.id === id);
+    if (!irradiator) return;
+
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+    const projection = this.getProjection(width, height);
+    const pos = projection([irradiator.lon, irradiator.lat]);
+    if (!pos) return;
+
+    this.popup.show({
+      type: 'irradiator',
+      data: irradiator,
+      x: pos[0],
+      y: pos[1],
+    });
+  }
+
+  public enableLayer(layer: keyof MapLayers): void {
+    if (!this.state.layers[layer]) {
+      this.state.layers[layer] = true;
+      const btn = document.querySelector(`[data-layer="${layer}"]`);
+      btn?.classList.add('active');
+      this.onLayerChange?.(layer, true);
+      this.render();
+    }
+  }
+
   private applyTransform(): void {
     const zoom = this.state.zoom;
     this.wrapper.style.transform = `scale(${zoom}) translate(${this.state.pan.x}px, ${this.state.pan.y}px)`;
@@ -1048,12 +1513,22 @@ export class MapComponent {
   }
 
   public setEarthquakes(earthquakes: Earthquake[]): void {
-    this.earthquakes = earthquakes;
+    console.log('[Map] setEarthquakes called with', earthquakes.length, 'earthquakes');
+    if (earthquakes.length > 0 || this.earthquakes.length === 0) {
+      this.earthquakes = earthquakes;
+    } else {
+      console.log('[Map] Keeping existing', this.earthquakes.length, 'earthquakes (new data was empty)');
+    }
     this.render();
   }
 
   public setWeatherAlerts(alerts: WeatherAlert[]): void {
     this.weatherAlerts = alerts;
+    this.render();
+  }
+
+  public setOutages(outages: InternetOutage[]): void {
+    this.outages = outages;
     this.render();
   }
 

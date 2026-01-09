@@ -1,11 +1,11 @@
-import type { ConflictZone, Hotspot, Earthquake, NewsItem } from '@/types';
+import type { ConflictZone, Hotspot, Earthquake, NewsItem, MilitaryBase, StrategicWaterway, APTGroup, NuclearFacility, EconomicCenter, GammaIrradiator, Pipeline, UnderseaCable, InternetOutage, AIDataCenter } from '@/types';
 import type { WeatherAlert } from '@/services/weather';
 
-export type PopupType = 'conflict' | 'hotspot' | 'earthquake' | 'weather';
+export type PopupType = 'conflict' | 'hotspot' | 'earthquake' | 'weather' | 'base' | 'waterway' | 'apt' | 'nuclear' | 'economic' | 'irradiator' | 'pipeline' | 'cable' | 'outage' | 'datacenter';
 
 interface PopupData {
   type: PopupType;
-  data: ConflictZone | Hotspot | Earthquake | WeatherAlert;
+  data: ConflictZone | Hotspot | Earthquake | WeatherAlert | MilitaryBase | StrategicWaterway | APTGroup | NuclearFacility | EconomicCenter | GammaIrradiator | Pipeline | UnderseaCable | InternetOutage | AIDataCenter;
   relatedNews?: NewsItem[];
   x: number;
   y: number;
@@ -75,6 +75,26 @@ export class MapPopup {
         return this.renderEarthquakePopup(data.data as Earthquake);
       case 'weather':
         return this.renderWeatherPopup(data.data as WeatherAlert);
+      case 'base':
+        return this.renderBasePopup(data.data as MilitaryBase);
+      case 'waterway':
+        return this.renderWaterwayPopup(data.data as StrategicWaterway);
+      case 'apt':
+        return this.renderAPTPopup(data.data as APTGroup);
+      case 'nuclear':
+        return this.renderNuclearPopup(data.data as NuclearFacility);
+      case 'economic':
+        return this.renderEconomicPopup(data.data as EconomicCenter);
+      case 'irradiator':
+        return this.renderIrradiatorPopup(data.data as GammaIrradiator);
+      case 'pipeline':
+        return this.renderPipelinePopup(data.data as Pipeline);
+      case 'cable':
+        return this.renderCablePopup(data.data as UnderseaCable);
+      case 'outage':
+        return this.renderOutagePopup(data.data as InternetOutage);
+      case 'datacenter':
+        return this.renderDatacenterPopup(data.data as AIDataCenter);
       default:
         return '';
     }
@@ -256,5 +276,415 @@ export class MapPopup {
     if (hours < 1) return `${Math.floor(ms / (1000 * 60))}m`;
     if (hours < 24) return `${hours}h`;
     return `${Math.floor(hours / 24)}d`;
+  }
+
+  private renderBasePopup(base: MilitaryBase): string {
+    const typeLabels: Record<string, string> = {
+      'us-nato': 'US/NATO',
+      'china': 'CHINA',
+      'russia': 'RUSSIA',
+    };
+    const typeColors: Record<string, string> = {
+      'us-nato': 'elevated',
+      'china': 'high',
+      'russia': 'high',
+    };
+
+    return `
+      <div class="popup-header base">
+        <span class="popup-title">${base.name.toUpperCase()}</span>
+        <span class="popup-badge ${typeColors[base.type] || 'low'}">${typeLabels[base.type] || base.type.toUpperCase()}</span>
+        <button class="popup-close">×</button>
+      </div>
+      <div class="popup-body">
+        ${base.description ? `<p class="popup-description">${base.description}</p>` : ''}
+        <div class="popup-stats">
+          <div class="popup-stat">
+            <span class="stat-label">TYPE</span>
+            <span class="stat-value">${typeLabels[base.type] || base.type}</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">COORDINATES</span>
+            <span class="stat-value">${base.lat.toFixed(2)}°, ${base.lon.toFixed(2)}°</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderWaterwayPopup(waterway: StrategicWaterway): string {
+    return `
+      <div class="popup-header waterway">
+        <span class="popup-title">${waterway.name}</span>
+        <span class="popup-badge elevated">STRATEGIC</span>
+        <button class="popup-close">×</button>
+      </div>
+      <div class="popup-body">
+        ${waterway.description ? `<p class="popup-description">${waterway.description}</p>` : ''}
+        <div class="popup-stats">
+          <div class="popup-stat">
+            <span class="stat-label">COORDINATES</span>
+            <span class="stat-value">${waterway.lat.toFixed(2)}°, ${waterway.lon.toFixed(2)}°</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderAPTPopup(apt: APTGroup): string {
+    return `
+      <div class="popup-header apt">
+        <span class="popup-title">${apt.name}</span>
+        <span class="popup-badge high">THREAT</span>
+        <button class="popup-close">×</button>
+      </div>
+      <div class="popup-body">
+        <div class="popup-subtitle">Also known as: ${apt.aka}</div>
+        <div class="popup-stats">
+          <div class="popup-stat">
+            <span class="stat-label">SPONSOR</span>
+            <span class="stat-value">${apt.sponsor}</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">ORIGIN</span>
+            <span class="stat-value">${apt.lat.toFixed(1)}°, ${apt.lon.toFixed(1)}°</span>
+          </div>
+        </div>
+        <p class="popup-description">Advanced Persistent Threat group with state-level capabilities. Known for sophisticated cyber operations targeting critical infrastructure, government, and defense sectors.</p>
+      </div>
+    `;
+  }
+
+  private renderNuclearPopup(facility: NuclearFacility): string {
+    const typeLabels: Record<string, string> = {
+      'plant': 'POWER PLANT',
+      'enrichment': 'ENRICHMENT',
+      'weapons': 'WEAPONS COMPLEX',
+      'research': 'RESEARCH',
+    };
+    const statusColors: Record<string, string> = {
+      'active': 'elevated',
+      'contested': 'high',
+      'decommissioned': 'low',
+    };
+
+    return `
+      <div class="popup-header nuclear">
+        <span class="popup-title">${facility.name.toUpperCase()}</span>
+        <span class="popup-badge ${statusColors[facility.status] || 'low'}">${facility.status.toUpperCase()}</span>
+        <button class="popup-close">×</button>
+      </div>
+      <div class="popup-body">
+        <div class="popup-stats">
+          <div class="popup-stat">
+            <span class="stat-label">TYPE</span>
+            <span class="stat-value">${typeLabels[facility.type] || facility.type.toUpperCase()}</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">STATUS</span>
+            <span class="stat-value">${facility.status.toUpperCase()}</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">COORDINATES</span>
+            <span class="stat-value">${facility.lat.toFixed(2)}°, ${facility.lon.toFixed(2)}°</span>
+          </div>
+        </div>
+        <p class="popup-description">Nuclear facility under monitoring. Strategic importance for regional security and non-proliferation concerns.</p>
+      </div>
+    `;
+  }
+
+  private renderEconomicPopup(center: EconomicCenter): string {
+    const typeLabels: Record<string, string> = {
+      'exchange': 'STOCK EXCHANGE',
+      'central-bank': 'CENTRAL BANK',
+      'financial-hub': 'FINANCIAL HUB',
+    };
+    const typeIcons: Record<string, string> = {
+      'exchange': '📈',
+      'central-bank': '🏛',
+      'financial-hub': '💰',
+    };
+
+    const marketStatus = center.marketHours ? this.getMarketStatus(center.marketHours) : null;
+
+    return `
+      <div class="popup-header economic ${center.type}">
+        <span class="popup-title">${typeIcons[center.type] || ''} ${center.name.toUpperCase()}</span>
+        <span class="popup-badge ${marketStatus === 'OPEN' ? 'elevated' : 'low'}">${marketStatus || typeLabels[center.type]}</span>
+        <button class="popup-close">×</button>
+      </div>
+      <div class="popup-body">
+        ${center.description ? `<p class="popup-description">${center.description}</p>` : ''}
+        <div class="popup-stats">
+          <div class="popup-stat">
+            <span class="stat-label">TYPE</span>
+            <span class="stat-value">${typeLabels[center.type] || center.type.toUpperCase()}</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">COUNTRY</span>
+            <span class="stat-value">${center.country}</span>
+          </div>
+          ${center.marketHours ? `
+          <div class="popup-stat">
+            <span class="stat-label">TRADING HOURS</span>
+            <span class="stat-value">${center.marketHours.open} - ${center.marketHours.close}</span>
+          </div>
+          ` : ''}
+          <div class="popup-stat">
+            <span class="stat-label">COORDINATES</span>
+            <span class="stat-value">${center.lat.toFixed(2)}°, ${center.lon.toFixed(2)}°</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderIrradiatorPopup(irradiator: GammaIrradiator): string {
+    return `
+      <div class="popup-header irradiator">
+        <span class="popup-title">☢ ${irradiator.city.toUpperCase()}</span>
+        <span class="popup-badge elevated">GAMMA</span>
+        <button class="popup-close">×</button>
+      </div>
+      <div class="popup-body">
+        <div class="popup-subtitle">Industrial Gamma Irradiator Facility</div>
+        <div class="popup-stats">
+          <div class="popup-stat">
+            <span class="stat-label">COUNTRY</span>
+            <span class="stat-value">${irradiator.country}</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">CITY</span>
+            <span class="stat-value">${irradiator.city}</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">COORDINATES</span>
+            <span class="stat-value">${irradiator.lat.toFixed(2)}°, ${irradiator.lon.toFixed(2)}°</span>
+          </div>
+        </div>
+        <p class="popup-description">Industrial irradiation facility using Cobalt-60 or Cesium-137 sources for medical device sterilization, food preservation, or material processing. Source: IAEA DIIF Database.</p>
+      </div>
+    `;
+  }
+
+  private renderPipelinePopup(pipeline: Pipeline): string {
+    const typeLabels: Record<string, string> = {
+      'oil': 'OIL PIPELINE',
+      'gas': 'GAS PIPELINE',
+      'products': 'PRODUCTS PIPELINE',
+    };
+    const typeColors: Record<string, string> = {
+      'oil': 'high',
+      'gas': 'elevated',
+      'products': 'low',
+    };
+    const statusLabels: Record<string, string> = {
+      'operating': 'OPERATING',
+      'construction': 'UNDER CONSTRUCTION',
+    };
+    const typeIcon = pipeline.type === 'oil' ? '🛢' : pipeline.type === 'gas' ? '🔥' : '⛽';
+
+    return `
+      <div class="popup-header pipeline ${pipeline.type}">
+        <span class="popup-title">${typeIcon} ${pipeline.name.toUpperCase()}</span>
+        <span class="popup-badge ${typeColors[pipeline.type] || 'low'}">${pipeline.type.toUpperCase()}</span>
+        <button class="popup-close">×</button>
+      </div>
+      <div class="popup-body">
+        <div class="popup-subtitle">${typeLabels[pipeline.type] || 'PIPELINE'}</div>
+        <div class="popup-stats">
+          <div class="popup-stat">
+            <span class="stat-label">STATUS</span>
+            <span class="stat-value">${statusLabels[pipeline.status] || pipeline.status.toUpperCase()}</span>
+          </div>
+          ${pipeline.capacity ? `
+          <div class="popup-stat">
+            <span class="stat-label">CAPACITY</span>
+            <span class="stat-value">${pipeline.capacity}</span>
+          </div>
+          ` : ''}
+          ${pipeline.length ? `
+          <div class="popup-stat">
+            <span class="stat-label">LENGTH</span>
+            <span class="stat-value">${pipeline.length}</span>
+          </div>
+          ` : ''}
+          ${pipeline.operator ? `
+          <div class="popup-stat">
+            <span class="stat-label">OPERATOR</span>
+            <span class="stat-value">${pipeline.operator}</span>
+          </div>
+          ` : ''}
+        </div>
+        ${pipeline.countries && pipeline.countries.length > 0 ? `
+          <div class="popup-section">
+            <span class="section-label">COUNTRIES</span>
+            <div class="popup-tags">
+              ${pipeline.countries.map(c => `<span class="popup-tag">${c}</span>`).join('')}
+            </div>
+          </div>
+        ` : ''}
+        <p class="popup-description">Major ${pipeline.type} pipeline infrastructure. ${pipeline.status === 'operating' ? 'Currently operational and transporting resources.' : 'Currently under construction.'}</p>
+      </div>
+    `;
+  }
+
+  private renderCablePopup(cable: UnderseaCable): string {
+    return `
+      <div class="popup-header cable">
+        <span class="popup-title">🌐 ${cable.name.toUpperCase()}</span>
+        <span class="popup-badge elevated">${cable.major ? 'MAJOR' : 'CABLE'}</span>
+        <button class="popup-close">×</button>
+      </div>
+      <div class="popup-body">
+        <div class="popup-subtitle">Undersea Fiber Optic Cable</div>
+        <div class="popup-stats">
+          <div class="popup-stat">
+            <span class="stat-label">TYPE</span>
+            <span class="stat-value">SUBMARINE CABLE</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">WAYPOINTS</span>
+            <span class="stat-value">${cable.points.length}</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">STATUS</span>
+            <span class="stat-value">ACTIVE</span>
+          </div>
+        </div>
+        <p class="popup-description">Undersea telecommunications cable carrying international internet traffic. These fiber optic cables form the backbone of global internet connectivity, transmitting over 95% of intercontinental data.</p>
+      </div>
+    `;
+  }
+
+  private renderOutagePopup(outage: InternetOutage): string {
+    const severityColors: Record<string, string> = {
+      'total': 'high',
+      'major': 'elevated',
+      'partial': 'low',
+    };
+    const severityLabels: Record<string, string> = {
+      'total': 'TOTAL BLACKOUT',
+      'major': 'MAJOR OUTAGE',
+      'partial': 'PARTIAL DISRUPTION',
+    };
+    const timeAgo = this.getTimeAgo(outage.pubDate);
+
+    return `
+      <div class="popup-header outage ${outage.severity}">
+        <span class="popup-title">📡 ${outage.country.toUpperCase()}</span>
+        <span class="popup-badge ${severityColors[outage.severity] || 'low'}">${severityLabels[outage.severity] || 'DISRUPTION'}</span>
+        <button class="popup-close">×</button>
+      </div>
+      <div class="popup-body">
+        <div class="popup-subtitle">${outage.title}</div>
+        <div class="popup-stats">
+          <div class="popup-stat">
+            <span class="stat-label">SEVERITY</span>
+            <span class="stat-value">${outage.severity.toUpperCase()}</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">REPORTED</span>
+            <span class="stat-value">${timeAgo}</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">COORDINATES</span>
+            <span class="stat-value">${outage.lat.toFixed(2)}°, ${outage.lon.toFixed(2)}°</span>
+          </div>
+        </div>
+        ${outage.categories && outage.categories.length > 0 ? `
+          <div class="popup-section">
+            <span class="section-label">CATEGORIES</span>
+            <div class="popup-tags">
+              ${outage.categories.slice(0, 5).map(c => `<span class="popup-tag">${c}</span>`).join('')}
+            </div>
+          </div>
+        ` : ''}
+        <p class="popup-description">${outage.description.slice(0, 250)}${outage.description.length > 250 ? '...' : ''}</p>
+        <a href="${outage.link}" target="_blank" class="popup-link">Read full report →</a>
+      </div>
+    `;
+  }
+
+  private renderDatacenterPopup(dc: AIDataCenter): string {
+    const statusColors: Record<string, string> = {
+      'existing': 'normal',
+      'planned': 'elevated',
+      'decommissioned': 'low',
+    };
+    const statusLabels: Record<string, string> = {
+      'existing': 'OPERATIONAL',
+      'planned': 'PLANNED',
+      'decommissioned': 'DECOMMISSIONED',
+    };
+
+    const formatNumber = (n: number) => {
+      if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+      if (n >= 1000) return `${(n / 1000).toFixed(0)}K`;
+      return n.toString();
+    };
+
+    return `
+      <div class="popup-header datacenter ${dc.status}">
+        <span class="popup-title">🖥️ ${dc.name}</span>
+        <span class="popup-badge ${statusColors[dc.status] || 'normal'}">${statusLabels[dc.status] || 'UNKNOWN'}</span>
+        <button class="popup-close">×</button>
+      </div>
+      <div class="popup-body">
+        <div class="popup-subtitle">${dc.owner} • ${dc.country}</div>
+        <div class="popup-stats">
+          <div class="popup-stat">
+            <span class="stat-label">GPU/CHIP COUNT</span>
+            <span class="stat-value">${formatNumber(dc.chipCount)}</span>
+          </div>
+          <div class="popup-stat">
+            <span class="stat-label">CHIP TYPE</span>
+            <span class="stat-value">${dc.chipType || 'Unknown'}</span>
+          </div>
+          ${dc.powerMW ? `
+          <div class="popup-stat">
+            <span class="stat-label">POWER</span>
+            <span class="stat-value">${dc.powerMW.toFixed(0)} MW</span>
+          </div>
+          ` : ''}
+          ${dc.sector ? `
+          <div class="popup-stat">
+            <span class="stat-label">SECTOR</span>
+            <span class="stat-value">${dc.sector}</span>
+          </div>
+          ` : ''}
+        </div>
+        ${dc.note ? `<p class="popup-description">${dc.note}</p>` : ''}
+        <div class="popup-attribution">Data: Epoch AI GPU Clusters</div>
+      </div>
+    `;
+  }
+
+  private getMarketStatus(hours: { open: string; close: string; timezone: string }): string {
+    try {
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: hours.timezone,
+      });
+      const currentTime = formatter.format(now);
+      const [openH = 0, openM = 0] = hours.open.split(':').map(Number);
+      const [closeH = 0, closeM = 0] = hours.close.split(':').map(Number);
+      const [currH = 0, currM = 0] = currentTime.split(':').map(Number);
+
+      const openMins = openH * 60 + openM;
+      const closeMins = closeH * 60 + closeM;
+      const currMins = currH * 60 + currM;
+
+      if (currMins >= openMins && currMins < closeMins) {
+        return 'OPEN';
+      }
+      return 'CLOSED';
+    } catch {
+      return 'UNKNOWN';
+    }
   }
 }

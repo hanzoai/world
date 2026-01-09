@@ -39,7 +39,13 @@ export default defineConfig({
       '/api/earthquake': {
         target: 'https://earthquake.usgs.gov',
         changeOrigin: true,
+        timeout: 30000,
         rewrite: (path) => path.replace(/^\/api\/earthquake/, ''),
+        configure: (proxy) => {
+          proxy.on('error', (err) => {
+            console.log('Earthquake proxy error:', err.message);
+          });
+        },
       },
       // FRED Economic Data
       '/api/fred': {
@@ -299,6 +305,24 @@ export default defineConfig({
         target: 'https://foreignpolicy.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/rss\/foreignpolicy/, ''),
+      },
+      // Financial Times
+      '/rss/ft': {
+        target: 'https://www.ft.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/ft/, ''),
+      },
+      // Reuters
+      '/rss/reuters': {
+        target: 'https://www.reutersagency.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rss\/reuters/, ''),
+      },
+      // Cloudflare Radar - Internet outages
+      '/api/cloudflare-radar': {
+        target: 'https://api.cloudflare.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/cloudflare-radar/, ''),
       },
     },
   },

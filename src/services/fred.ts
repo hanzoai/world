@@ -35,10 +35,16 @@ async function fetchSeriesData(seriesId: string): Promise<{ date: string; value:
 
     const url = `${FRED_CSV_BASE}?id=${seriesId}&cosd=${startDate}&coed=${endDate}`;
     const response = await fetch(url, {
-      headers: { 'Accept': 'text/csv' }
+      headers: {
+        'Accept': 'text/csv',
+        'User-Agent': 'WorldMonitor/1.0'
+      }
     });
 
-    if (!response.ok) return [];
+    if (!response.ok) {
+      console.warn(`FRED API returned ${response.status} for ${seriesId}`);
+      return [];
+    }
 
     const csv = await response.text();
     const lines = csv.trim().split('\n').slice(1);

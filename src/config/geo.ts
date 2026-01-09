@@ -1,4 +1,5 @@
-import type { Hotspot, ConflictZone, MilitaryBase, UnderseaCable, NuclearFacility, StrategicWaterway, APTGroup } from '@/types';
+import type { Hotspot, ConflictZone, MilitaryBase, UnderseaCable, NuclearFacility, StrategicWaterway, APTGroup, EconomicCenter } from '@/types';
+import { MILITARY_BASES_EXPANDED } from './bases-expanded';
 
 // Hotspot levels are NOT hardcoded - they are dynamically calculated based on news activity
 // All hotspots start at 'low' and rise to 'elevated' or 'high' based on matching news items
@@ -12,6 +13,39 @@ export const INTEL_HOTSPOTS: Hotspot[] = [
     keywords: ['pentagon', 'white house', 'congress', 'cia', 'nsa', 'washington', 'biden', 'trump', 'house', 'senate', 'supreme court', 'vance', 'elon', 'us '],
     agencies: ['Pentagon', 'CIA', 'NSA', 'State Dept'],
     description: 'US government and military headquarters. Intelligence community center.',
+    status: 'Monitoring',
+  },
+  {
+    id: 'silicon_valley',
+    name: 'Silicon Valley',
+    subtext: 'Tech/AI Hub',
+    lat: 37.4,
+    lon: -122.1,
+    keywords: ['google', 'apple', 'meta', 'nvidia', 'openai', 'anthropic', 'silicon valley', 'san francisco', 'palo alto', 'tech layoffs', 'ai', 'artificial intelligence'],
+    agencies: ['Big Tech', 'AI Labs', 'VC'],
+    description: 'Global tech center. AI development hub. Major economic indicator.',
+    status: 'Monitoring',
+  },
+  {
+    id: 'wall_street',
+    name: 'Wall Street',
+    subtext: 'Financial Hub',
+    lat: 40.7,
+    lon: -74.0,
+    keywords: ['wall street', 'fed', 'federal reserve', 'nyse', 'nasdaq', 'dow', 'sp500', 'stock market', 'goldman', 'jpmorgan', 'blackrock'],
+    agencies: ['Fed', 'SEC', 'NYSE'],
+    description: 'Global financial center. Market movements. Fed policy.',
+    status: 'Monitoring',
+  },
+  {
+    id: 'houston',
+    name: 'Houston',
+    subtext: 'Energy/Space',
+    lat: 29.76,
+    lon: -95.37,
+    keywords: ['houston', 'nasa', 'spacex', 'oil', 'energy', 'texas', 'exxon', 'chevron', 'lng'],
+    agencies: ['NASA', 'Energy Corps'],
+    description: 'Energy sector HQ. NASA mission control. Space industry.',
     status: 'Monitoring',
   },
   {
@@ -244,6 +278,9 @@ export const STRATEGIC_WATERWAYS: StrategicWaterway[] = [
   { id: 'bosphorus', name: 'BOSPHORUS STRAIT', lat: 41.1, lon: 29.0, description: 'Black Sea access, Turkey control' },
   { id: 'suez', name: 'SUEZ CANAL', lat: 30.5, lon: 32.3, description: 'Europe-Asia shipping' },
   { id: 'panama', name: 'PANAMA CANAL', lat: 9.1, lon: -79.7, description: 'Americas shipping route' },
+  { id: 'gibraltar', name: 'STRAIT OF GIBRALTAR', lat: 35.9, lon: -5.6, description: 'Mediterranean access, NATO control' },
+  { id: 'bab_el_mandeb', name: 'BAB EL-MANDEB', lat: 12.5, lon: 43.3, description: 'Red Sea chokepoint, Houthi attacks' },
+  { id: 'dardanelles', name: 'DARDANELLES', lat: 40.2, lon: 26.4, description: 'Aegean-Marmara link, Turkey control' },
 ];
 
 export const APT_GROUPS: APTGroup[] = [
@@ -316,31 +353,54 @@ export const CONFLICT_ZONES: ConflictZone[] = [
   },
 ];
 
-export const MILITARY_BASES: MilitaryBase[] = [
-  // US/NATO
-  { id: 'ramstein', name: 'Ramstein AB', lat: 49.44, lon: 7.6, type: 'us-nato' },
-  { id: 'diego_garcia', name: 'Diego Garcia', lat: -7.32, lon: 72.42, type: 'us-nato' },
-  { id: 'okinawa', name: 'Okinawa', lat: 26.5, lon: 127.9, type: 'us-nato' },
-  { id: 'guam', name: 'Guam', lat: 13.45, lon: 144.8, type: 'us-nato' },
-  { id: 'qatar', name: 'Al Udeid AB', lat: 25.12, lon: 51.32, type: 'us-nato' },
-  { id: 'djibouti_us', name: 'Camp Lemonnier', lat: 11.55, lon: 43.15, type: 'us-nato' },
-  { id: 'bahrain', name: 'NSA Bahrain', lat: 26.23, lon: 50.58, type: 'us-nato' },
-  { id: 'yokosuka', name: 'Yokosuka', lat: 35.28, lon: 139.67, type: 'us-nato' },
-  { id: 'rota', name: 'Naval Rota', lat: 36.62, lon: -6.35, type: 'us-nato' },
-  { id: 'incirlik', name: 'Incirlik AB', lat: 37.0, lon: 35.43, type: 'us-nato' },
-  // China
-  { id: 'djibouti_cn', name: 'PLA Djibouti', lat: 11.59, lon: 43.05, type: 'china' },
-  { id: 'woody_island', name: 'Woody Island', lat: 16.83, lon: 112.33, type: 'china' },
-  { id: 'fiery_cross', name: 'Fiery Cross', lat: 9.55, lon: 112.89, type: 'china' },
-  { id: 'mischief_reef', name: 'Mischief Reef', lat: 9.9, lon: 115.53, type: 'china' },
-  { id: 'subi_reef', name: 'Subi Reef', lat: 10.92, lon: 114.08, type: 'china' },
-  // Russia
-  { id: 'kaliningrad', name: 'Kaliningrad', lat: 54.71, lon: 20.51, type: 'russia' },
-  { id: 'tartus', name: 'Tartus (Syria)', lat: 34.89, lon: 35.87, type: 'russia' },
-  { id: 'sevastopol', name: 'Sevastopol', lat: 44.6, lon: 33.5, type: 'russia' },
-  { id: 'vladivostok', name: 'Vladivostok', lat: 43.12, lon: 131.9, type: 'russia' },
-  { id: 'murmansk', name: 'Murmansk', lat: 68.97, lon: 33.09, type: 'russia' },
+// US Domestic bases (not in overseas dataset - these are CONUS bases)
+const US_DOMESTIC_BASES: MilitaryBase[] = [
+  { id: 'norfolk', name: 'Norfolk Naval', lat: 36.95, lon: -76.31, type: 'us-nato', description: 'World largest naval base. Atlantic Fleet HQ.' },
+  { id: 'fort_liberty', name: 'Fort Liberty', lat: 35.14, lon: -79.0, type: 'us-nato', description: 'Army Special Ops. XVIII Airborne Corps.' },
+  { id: 'pendleton', name: 'Camp Pendleton', lat: 33.38, lon: -117.4, type: 'us-nato', description: 'USMC West Coast. 1st Marine Division.' },
+  { id: 'san_diego', name: 'Naval San Diego', lat: 32.68, lon: -117.13, type: 'us-nato', description: 'Pacific Fleet. Carrier homeport.' },
+  { id: 'nellis', name: 'Nellis AFB', lat: 36.24, lon: -115.03, type: 'us-nato', description: 'Air combat training. Red Flag exercises.' },
+  { id: 'langley', name: 'Langley AFB', lat: 37.08, lon: -76.36, type: 'us-nato', description: 'Air Combat Command HQ. F-22 wing.' },
+  { id: 'cheyenne', name: 'Cheyenne Mtn', lat: 38.74, lon: -104.85, type: 'us-nato', description: 'NORAD. Missile warning, space control.' },
+  { id: 'peterson', name: 'Peterson SFB', lat: 38.82, lon: -104.71, type: 'us-nato', description: 'US Space Command HQ. Space operations.' },
+  { id: 'kings_bay', name: 'Kings Bay', lat: 30.8, lon: -81.52, type: 'us-nato', description: 'Ohio-class submarine base. Atlantic deterrent.' },
+  { id: 'kitsap', name: 'Naval Kitsap', lat: 47.56, lon: -122.66, type: 'us-nato', description: 'Trident submarine base. Pacific deterrent.' },
+  { id: 'yokosuka', name: 'Yokosuka', lat: 35.28, lon: 139.67, type: 'us-nato', description: 'US 7th Fleet HQ. Carrier strike group homeport.' },
+  { id: 'rota', name: 'Naval Rota', lat: 36.62, lon: -6.35, type: 'us-nato', description: 'US/Spanish naval base. Aegis destroyers, Atlantic access.' },
+  { id: 'incirlik', name: 'Incirlik AB', lat: 37.0, lon: 35.43, type: 'us-nato', description: 'US/Turkish base. Nuclear weapons storage site.' },
+  // Russian domestic bases (not overseas)
+  { id: 'kaliningrad', name: 'Kaliningrad', lat: 54.71, lon: 20.51, type: 'russia', description: 'Russian exclave. Baltic Fleet, Iskander missiles.' },
+  { id: 'sevastopol', name: 'Sevastopol', lat: 44.6, lon: 33.5, type: 'russia', description: 'Black Sea Fleet HQ. Crimea (occupied).' },
+  { id: 'vladivostok', name: 'Vladivostok', lat: 43.12, lon: 131.9, type: 'russia', description: 'Pacific Fleet HQ. Nuclear submarines.' },
+  { id: 'murmansk', name: 'Murmansk', lat: 68.97, lon: 33.09, type: 'russia', description: 'Northern Fleet. Strategic nuclear submarines.' },
 ];
+
+// Merge expanded bases with domestic bases, deduplicating by proximity
+function mergeAndDeduplicateBases(): MilitaryBase[] {
+  const allBases = [...MILITARY_BASES_EXPANDED];
+  const usedCoords = new Set<string>();
+
+  // Index expanded bases by approximate location
+  for (const base of MILITARY_BASES_EXPANDED) {
+    const key = `${Math.round(base.lat * 10)}_${Math.round(base.lon * 10)}`;
+    usedCoords.add(key);
+  }
+
+  // Add domestic bases if not already present (by location proximity)
+  for (const base of US_DOMESTIC_BASES) {
+    const key = `${Math.round(base.lat * 10)}_${Math.round(base.lon * 10)}`;
+    if (!usedCoords.has(key)) {
+      allBases.push(base);
+      usedCoords.add(key);
+    }
+  }
+
+  return allBases;
+}
+
+// Combined military bases: 210 from ASIAR dataset + unique domestic bases
+// Total: ~220 bases from 9 operators (US-NATO, UK, France, Russia, China, India, Italy, UAE, Japan)
+export const MILITARY_BASES: MilitaryBase[] = mergeAndDeduplicateBases();
 
 export const UNDERSEA_CABLES: UnderseaCable[] = [
   {
@@ -382,6 +442,14 @@ export const UNDERSEA_CABLES: UnderseaCable[] = [
 ];
 
 export const NUCLEAR_FACILITIES: NuclearFacility[] = [
+  // US Nuclear Labs & Weapons Complex
+  { id: 'los_alamos', name: 'Los Alamos', lat: 35.88, lon: -106.31, type: 'weapons', status: 'active' },
+  { id: 'sandia', name: 'Sandia Labs', lat: 35.04, lon: -106.54, type: 'weapons', status: 'active' },
+  { id: 'livermore', name: 'LLNL', lat: 37.69, lon: -121.7, type: 'weapons', status: 'active' },
+  { id: 'oak_ridge', name: 'Oak Ridge', lat: 35.93, lon: -84.31, type: 'enrichment', status: 'active' },
+  { id: 'hanford', name: 'Hanford', lat: 46.55, lon: -119.49, type: 'weapons', status: 'inactive' },
+  { id: 'pantex', name: 'Pantex', lat: 35.32, lon: -101.55, type: 'weapons', status: 'active' },
+  // Foreign Nuclear
   { id: 'zaporizhzhia', name: 'Zaporizhzhia NPP', lat: 47.51, lon: 34.58, type: 'plant', status: 'contested' },
   { id: 'natanz', name: 'Natanz', lat: 33.72, lon: 51.73, type: 'enrichment', status: 'active' },
   { id: 'fordow', name: 'Fordow', lat: 34.88, lon: 51.0, type: 'enrichment', status: 'active' },
@@ -484,4 +552,54 @@ export const COUNTRY_LABELS: CountryLabel[] = [
   // Oceania
   { id: 36, name: 'Australia', lat: -25.3, lon: 133.8 },
   { id: 554, name: 'New Zealand', lat: -41.0, lon: 174.9 },
+];
+
+// Global Economic Centers - Stock Exchanges, Central Banks, Financial Hubs
+export const ECONOMIC_CENTERS: EconomicCenter[] = [
+  // Americas
+  { id: 'nyse', name: 'NYSE', type: 'exchange', lat: 40.7069, lon: -74.0089, country: 'USA', marketHours: { open: '09:30', close: '16:00', timezone: 'America/New_York' }, description: 'New York Stock Exchange - World\'s largest stock exchange' },
+  { id: 'nasdaq', name: 'NASDAQ', type: 'exchange', lat: 40.7569, lon: -73.9896, country: 'USA', marketHours: { open: '09:30', close: '16:00', timezone: 'America/New_York' }, description: 'Tech-heavy exchange' },
+  { id: 'fed', name: 'Federal Reserve', type: 'central-bank', lat: 38.8927, lon: -77.0459, country: 'USA', description: 'US Central Bank - Controls USD monetary policy' },
+  { id: 'cme', name: 'CME Group', type: 'exchange', lat: 41.8819, lon: -87.6278, country: 'USA', description: 'Chicago Mercantile Exchange - Futures & derivatives' },
+  { id: 'tsx', name: 'TSX', type: 'exchange', lat: 43.6489, lon: -79.3850, country: 'Canada', marketHours: { open: '09:30', close: '16:00', timezone: 'America/Toronto' }, description: 'Toronto Stock Exchange' },
+  { id: 'bovespa', name: 'B3', type: 'exchange', lat: -23.5505, lon: -46.6333, country: 'Brazil', description: 'Brazilian Stock Exchange (B3/Bovespa)' },
+  // Europe
+  { id: 'lse', name: 'LSE', type: 'exchange', lat: 51.5145, lon: -0.0940, country: 'UK', marketHours: { open: '08:00', close: '16:30', timezone: 'Europe/London' }, description: 'London Stock Exchange' },
+  { id: 'boe', name: 'Bank of England', type: 'central-bank', lat: 51.5142, lon: -0.0880, country: 'UK', description: 'UK Central Bank' },
+  { id: 'ecb', name: 'ECB', type: 'central-bank', lat: 50.1096, lon: 8.6732, country: 'Germany', description: 'European Central Bank - Controls EUR' },
+  { id: 'euronext', name: 'Euronext', type: 'exchange', lat: 48.8690, lon: 2.3364, country: 'France', marketHours: { open: '09:00', close: '17:30', timezone: 'Europe/Paris' }, description: 'Pan-European Exchange (Paris, Amsterdam, Brussels, Lisbon)' },
+  { id: 'dax', name: 'Deutsche Börse', type: 'exchange', lat: 50.1109, lon: 8.6821, country: 'Germany', marketHours: { open: '09:00', close: '17:30', timezone: 'Europe/Berlin' }, description: 'Frankfurt Stock Exchange - DAX' },
+  { id: 'six', name: 'SIX Swiss', type: 'exchange', lat: 47.3769, lon: 8.5417, country: 'Switzerland', description: 'Swiss Exchange' },
+  { id: 'snb', name: 'SNB', type: 'central-bank', lat: 46.9480, lon: 7.4474, country: 'Switzerland', description: 'Swiss National Bank' },
+  // Asia-Pacific
+  { id: 'tse', name: 'Tokyo SE', type: 'exchange', lat: 35.6830, lon: 139.7744, country: 'Japan', marketHours: { open: '09:00', close: '15:00', timezone: 'Asia/Tokyo' }, description: 'Tokyo Stock Exchange - Nikkei' },
+  { id: 'boj', name: 'Bank of Japan', type: 'central-bank', lat: 35.6855, lon: 139.7579, country: 'Japan', description: 'Japan Central Bank - Controls JPY' },
+  { id: 'sse', name: 'Shanghai SE', type: 'exchange', lat: 31.2304, lon: 121.4737, country: 'China', marketHours: { open: '09:30', close: '15:00', timezone: 'Asia/Shanghai' }, description: 'Shanghai Stock Exchange' },
+  { id: 'szse', name: 'Shenzhen SE', type: 'exchange', lat: 22.5431, lon: 114.0579, country: 'China', description: 'Shenzhen Stock Exchange - Tech focus' },
+  { id: 'pboc', name: 'PBOC', type: 'central-bank', lat: 39.9208, lon: 116.4074, country: 'China', description: 'People\'s Bank of China - Controls CNY' },
+  { id: 'hkex', name: 'HKEX', type: 'exchange', lat: 22.2833, lon: 114.1577, country: 'Hong Kong', marketHours: { open: '09:30', close: '16:00', timezone: 'Asia/Hong_Kong' }, description: 'Hong Kong Exchange' },
+  { id: 'sgx', name: 'SGX', type: 'exchange', lat: 1.2834, lon: 103.8607, country: 'Singapore', description: 'Singapore Exchange' },
+  { id: 'mas', name: 'MAS', type: 'central-bank', lat: 1.2789, lon: 103.8536, country: 'Singapore', description: 'Monetary Authority of Singapore' },
+  { id: 'kospi', name: 'KRX', type: 'exchange', lat: 37.5665, lon: 126.9780, country: 'South Korea', marketHours: { open: '09:00', close: '15:30', timezone: 'Asia/Seoul' }, description: 'Korea Exchange - KOSPI' },
+  { id: 'bse', name: 'BSE', type: 'exchange', lat: 18.9307, lon: 72.8335, country: 'India', marketHours: { open: '09:15', close: '15:30', timezone: 'Asia/Kolkata' }, description: 'Bombay Stock Exchange - Sensex' },
+  { id: 'nse', name: 'NSE India', type: 'exchange', lat: 19.0571, lon: 72.8621, country: 'India', description: 'National Stock Exchange - Nifty' },
+  { id: 'rbi', name: 'RBI', type: 'central-bank', lat: 18.9322, lon: 72.8351, country: 'India', description: 'Reserve Bank of India' },
+  { id: 'asx', name: 'ASX', type: 'exchange', lat: -33.8688, lon: 151.2093, country: 'Australia', marketHours: { open: '10:00', close: '16:00', timezone: 'Australia/Sydney' }, description: 'Australian Securities Exchange' },
+  { id: 'rba', name: 'RBA', type: 'central-bank', lat: -33.8654, lon: 151.2105, country: 'Australia', description: 'Reserve Bank of Australia' },
+  // Middle East & Africa
+  { id: 'tadawul', name: 'Tadawul', type: 'exchange', lat: 24.6877, lon: 46.7219, country: 'Saudi Arabia', marketHours: { open: '10:00', close: '15:00', timezone: 'Asia/Riyadh' }, description: 'Saudi Stock Exchange - Largest in Arab world' },
+  { id: 'adx', name: 'ADX', type: 'exchange', lat: 24.4539, lon: 54.3773, country: 'UAE', marketHours: { open: '10:00', close: '14:00', timezone: 'Asia/Dubai' }, description: 'Abu Dhabi Securities Exchange' },
+  { id: 'dfm', name: 'DFM', type: 'exchange', lat: 25.2221, lon: 55.2867, country: 'UAE', marketHours: { open: '10:00', close: '14:00', timezone: 'Asia/Dubai' }, description: 'Dubai Financial Market' },
+  { id: 'qse', name: 'QSE', type: 'exchange', lat: 25.2854, lon: 51.5310, country: 'Qatar', marketHours: { open: '09:30', close: '13:15', timezone: 'Asia/Qatar' }, description: 'Qatar Stock Exchange' },
+  { id: 'bkw', name: 'Boursa Kuwait', type: 'exchange', lat: 29.3759, lon: 47.9774, country: 'Kuwait', marketHours: { open: '09:00', close: '12:30', timezone: 'Asia/Kuwait' }, description: 'Kuwait Stock Exchange' },
+  { id: 'bse_bahrain', name: 'Bahrain Bourse', type: 'exchange', lat: 26.2285, lon: 50.5860, country: 'Bahrain', description: 'Bahrain Stock Exchange' },
+  { id: 'egx', name: 'EGX', type: 'exchange', lat: 30.0444, lon: 31.2357, country: 'Egypt', marketHours: { open: '10:00', close: '14:30', timezone: 'Africa/Cairo' }, description: 'Egyptian Exchange - Cairo' },
+  { id: 'tase', name: 'TASE', type: 'exchange', lat: 32.0853, lon: 34.7818, country: 'Israel', marketHours: { open: '09:59', close: '17:14', timezone: 'Asia/Jerusalem' }, description: 'Tel Aviv Stock Exchange' },
+  { id: 'jse', name: 'JSE', type: 'exchange', lat: -26.1447, lon: 28.0381, country: 'South Africa', marketHours: { open: '09:00', close: '17:00', timezone: 'Africa/Johannesburg' }, description: 'Johannesburg Stock Exchange' },
+  { id: 'nse_nigeria', name: 'NGX', type: 'exchange', lat: 6.4541, lon: 3.4218, country: 'Nigeria', description: 'Nigerian Exchange Group - Lagos' },
+  { id: 'casa', name: 'Casablanca SE', type: 'exchange', lat: 33.5731, lon: -7.5898, country: 'Morocco', description: 'Casablanca Stock Exchange' },
+  // Financial Hubs (not exchanges but major centers)
+  { id: 'dubai_hub', name: 'DIFC', type: 'financial-hub', lat: 25.2116, lon: 55.2708, country: 'UAE', description: 'Dubai International Financial Centre' },
+  { id: 'cayman', name: 'Cayman Islands', type: 'financial-hub', lat: 19.3133, lon: -81.2546, country: 'Cayman Islands', description: 'Offshore financial center' },
+  { id: 'luxembourg', name: 'Luxembourg', type: 'financial-hub', lat: 49.6116, lon: 6.1319, country: 'Luxembourg', description: 'European investment fund center' },
 ];

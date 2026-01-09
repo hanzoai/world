@@ -30,9 +30,26 @@ const NEWS_VELOCITY_THRESHOLD = 3;
 
 let previousSnapshot: StreamSnapshot | null = null;
 const signalHistory: CorrelationSignal[] = [];
+const recentSignalKeys = new Set<string>();
 
 function generateSignalId(): string {
   return `sig-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function generateDedupeKey(type: SignalType, identifier: string, value: number): string {
+  // Round value to avoid minor fluctuations creating new signals
+  const roundedValue = Math.round(value * 10) / 10;
+  return `${type}:${identifier}:${roundedValue}`;
+}
+
+function isRecentDuplicate(key: string): boolean {
+  return recentSignalKeys.has(key);
+}
+
+function markSignalSeen(key: string): void {
+  recentSignalKeys.add(key);
+  // Clean old keys after 30 minutes
+  setTimeout(() => recentSignalKeys.delete(key), 30 * 60 * 1000);
 }
 
 function extractTopics(events: ClusteredEvent[]): Map<string, number> {
@@ -115,7 +132,9 @@ export function analyzeCorrelations(
         const related = findRelatedTopics(pred.title);
         const newsActivity = related.reduce((sum, t) => sum + (newsTopics.get(t) ?? 0), 0);
 
-        if (newsActivity < NEWS_VELOCITY_THRESHOLD) {
+        const dedupeKey = generateDedupeKey('prediction_leads_news', key, shift);
+        if (newsActivity < NEWS_VELOCITY_THRESHOLD && !isRecentDuplicate(dedupeKey)) {
+          markSignalSeen(dedupeKey);
           signals.push({
             id: generateSignalId(),
             type: 'prediction_leads_news',
@@ -138,18 +157,22 @@ export function analyzeCorrelations(
   for (const [topic, velocity] of newsTopics) {
     const prevVelocity = previousSnapshot.newsVelocity.get(topic) ?? 0;
     if (velocity > NEWS_VELOCITY_THRESHOLD * 2 && velocity > prevVelocity * 2) {
-      signals.push({
-        id: generateSignalId(),
-        type: 'velocity_spike',
-        title: 'News Velocity Spike',
-        description: `"${topic}" coverage surging: ${velocity.toFixed(1)} activity score`,
-        confidence: Math.min(0.85, 0.4 + velocity / 20),
-        timestamp: new Date(),
-        data: {
-          newsVelocity: velocity,
-          relatedTopics: [topic],
-        },
-      });
+      const dedupeKey = generateDedupeKey('velocity_spike', topic, velocity);
+      if (!isRecentDuplicate(dedupeKey)) {
+        markSignalSeen(dedupeKey);
+        signals.push({
+          id: generateSignalId(),
+          type: 'velocity_spike',
+          title: 'News Velocity Spike',
+          description: `"${topic}" coverage surging: ${velocity.toFixed(1)} activity score`,
+          confidence: Math.min(0.85, 0.4 + velocity / 20),
+          timestamp: new Date(),
+          data: {
+            newsVelocity: velocity,
+            relatedTopics: [topic],
+          },
+        });
+      }
     }
   }
 
@@ -161,7 +184,9 @@ export function analyzeCorrelations(
         .filter(([k]) => market.name.toLowerCase().includes(k) || k.includes(market.symbol.toLowerCase()))
         .reduce((sum, [, v]) => sum + v, 0);
 
-      if (relatedNews < 2) {
+      const dedupeKey = generateDedupeKey('silent_divergence', market.symbol, change);
+      if (relatedNews < 2 && !isRecentDuplicate(dedupeKey)) {
+        markSignalSeen(dedupeKey);
         signals.push({
           id: generateSignalId(),
           type: 'silent_divergence',

@@ -24,13 +24,18 @@ export const DEFAULT_MAP_LAYERS: MapLayers = {
   conflicts: true,
   bases: true,
   cables: true,
+  pipelines: false,
   hotspots: true,
   nuclear: true,
+  irradiators: false,
   sanctions: true,
   earthquakes: true,
   weather: true,
   economic: true,
   countries: false,
+  waterways: false,
+  outages: true,
+  datacenters: false,
 };
 
 export const MONITOR_COLORS = [

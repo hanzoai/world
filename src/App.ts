@@ -10,7 +10,7 @@ import {
   DEFAULT_MAP_LAYERS,
   STORAGE_KEYS,
 } from '@/config';
-import { fetchCategoryFeeds, fetchMultipleStocks, fetchCrypto, fetchPredictions, fetchEarthquakes, fetchWeatherAlerts, fetchFredData, initDB, updateBaseline, calculateDeviation, analyzeCorrelations, clusterNews, addToSignalHistory, saveSnapshot, cleanOldSnapshots } from '@/services';
+import { fetchCategoryFeeds, fetchMultipleStocks, fetchCrypto, fetchPredictions, fetchEarthquakes, fetchWeatherAlerts, fetchFredData, fetchInternetOutages, initDB, updateBaseline, calculateDeviation, analyzeCorrelations, clusterNews, addToSignalHistory, saveSnapshot, cleanOldSnapshots } from '@/services';
 import { loadFromStorage, saveToStorage, ExportPanel } from '@/utils';
 import {
   MapComponent,
@@ -26,7 +26,13 @@ import {
   PlaybackControl,
   StatusPanel,
   EconomicPanel,
+  SearchModal,
 } from '@/components';
+import type { SearchResult } from '@/components/SearchModal';
+import { INTEL_HOTSPOTS, CONFLICT_ZONES, MILITARY_BASES, UNDERSEA_CABLES, NUCLEAR_FACILITIES } from '@/config/geo';
+import { PIPELINES } from '@/config/pipelines';
+import { AI_DATA_CENTERS } from '@/config/ai-datacenters';
+import { GAMMA_IRRADIATORS } from '@/config/irradiators';
 import type { PredictionMarket, MarketData, ClusteredEvent } from '@/types';
 
 export class App {
@@ -43,6 +49,7 @@ export class App {
   private statusPanel: StatusPanel | null = null;
   private exportPanel: ExportPanel | null = null;
   private economicPanel: EconomicPanel | null = null;
+  private searchModal: SearchModal | null = null;
   private latestPredictions: PredictionMarket[] = [];
   private latestMarkets: MarketData[] = [];
   private latestClusters: ClusteredEvent[] = [];
@@ -69,6 +76,7 @@ export class App {
     this.setupStatusPanel();
     this.setupExportPanel();
     this.setupEconomicPanel();
+    this.setupSearchModal();
     this.setupEventListeners();
     await this.loadAllData();
     this.setupRefreshIntervals();
@@ -123,6 +131,242 @@ export class App {
       this.mapLayers[layer] = enabled;
       saveToStorage(STORAGE_KEYS.mapLayers, this.mapLayers);
     });
+  }
+
+  private setupSearchModal(): void {
+    this.searchModal = new SearchModal(this.container);
+
+    // Register static sources (hotspots, conflicts, bases)
+    // Include keywords in subtitle for better searchability
+    this.searchModal.registerSource('hotspot', INTEL_HOTSPOTS.map(h => ({
+      id: h.id,
+      title: h.name,
+      subtitle: `${h.subtext || ''} ${h.keywords?.join(' ') || ''} ${h.description || ''}`.trim(),
+      data: h,
+    })));
+
+    this.searchModal.registerSource('conflict', CONFLICT_ZONES.map(c => ({
+      id: c.id,
+      title: c.name,
+      subtitle: `${c.parties?.join(' ') || ''} ${c.keywords?.join(' ') || ''} ${c.description || ''}`.trim(),
+      data: c,
+    })));
+
+    this.searchModal.registerSource('base', MILITARY_BASES.map(b => ({
+      id: b.id,
+      title: b.name,
+      subtitle: `${b.type} ${b.description || ''}`.trim(),
+      data: b,
+    })));
+
+    // Register pipelines
+    this.searchModal.registerSource('pipeline', PIPELINES.map(p => ({
+      id: p.id,
+      title: p.name,
+      subtitle: `${p.type} ${p.operator || ''} ${p.countries?.join(' ') || ''}`.trim(),
+      data: p,
+    })));
+
+    // Register undersea cables
+    this.searchModal.registerSource('cable', UNDERSEA_CABLES.map(c => ({
+      id: c.id,
+      title: c.name,
+      subtitle: c.major ? 'Major cable' : '',
+      data: c,
+    })));
+
+    // Register AI datacenters
+    this.searchModal.registerSource('datacenter', AI_DATA_CENTERS.map(d => ({
+      id: d.id,
+      title: d.name,
+      subtitle: `${d.owner} ${d.chipType || ''}`.trim(),
+      data: d,
+    })));
+
+    // Register nuclear facilities
+    this.searchModal.registerSource('nuclear', NUCLEAR_FACILITIES.map(n => ({
+      id: n.id,
+      title: n.name,
+      subtitle: `${n.type} ${n.operator || ''}`.trim(),
+      data: n,
+    })));
+
+    // Register gamma irradiators
+    this.searchModal.registerSource('irradiator', GAMMA_IRRADIATORS.map(g => ({
+      id: g.id,
+      title: `${g.city}, ${g.country}`,
+      subtitle: g.organization || '',
+      data: g,
+    })));
+
+    // Handle result selection
+    this.searchModal.setOnSelect((result) => this.handleSearchResult(result));
+
+    // Global keyboard shortcut
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        if (this.searchModal?.isOpen()) {
+          this.searchModal.close();
+        } else {
+          // Update search index with latest data before opening
+          this.updateSearchIndex();
+          this.searchModal?.open();
+        }
+      }
+    });
+  }
+
+  private handleSearchResult(result: SearchResult): void {
+    switch (result.type) {
+      case 'news': {
+        // Find and scroll to the news panel containing this item
+        const item = result.data as NewsItem;
+        this.scrollToPanel('politics');
+        this.highlightNewsItem(item.link);
+        break;
+      }
+      case 'hotspot': {
+        // Trigger map popup for hotspot
+        const hotspot = result.data as typeof INTEL_HOTSPOTS[0];
+        this.map?.setView('global');
+        setTimeout(() => {
+          this.map?.triggerHotspotClick(hotspot.id);
+        }, 300);
+        break;
+      }
+      case 'conflict': {
+        const conflict = result.data as typeof CONFLICT_ZONES[0];
+        this.map?.setView('global');
+        setTimeout(() => {
+          this.map?.triggerConflictClick(conflict.id);
+        }, 300);
+        break;
+      }
+      case 'market': {
+        this.scrollToPanel('markets');
+        break;
+      }
+      case 'prediction': {
+        this.scrollToPanel('polymarket');
+        break;
+      }
+      case 'base': {
+        const base = result.data as typeof MILITARY_BASES[0];
+        this.map?.setView('global');
+        setTimeout(() => {
+          this.map?.triggerBaseClick(base.id);
+        }, 300);
+        break;
+      }
+      case 'pipeline': {
+        const pipeline = result.data as typeof PIPELINES[0];
+        this.map?.setView('global');
+        this.map?.enableLayer('pipelines');
+        this.mapLayers.pipelines = true;
+        setTimeout(() => {
+          this.map?.triggerPipelineClick(pipeline.id);
+        }, 300);
+        break;
+      }
+      case 'cable': {
+        const cable = result.data as typeof UNDERSEA_CABLES[0];
+        this.map?.setView('global');
+        this.map?.enableLayer('cables');
+        this.mapLayers.cables = true;
+        setTimeout(() => {
+          this.map?.triggerCableClick(cable.id);
+        }, 300);
+        break;
+      }
+      case 'datacenter': {
+        const dc = result.data as typeof AI_DATA_CENTERS[0];
+        this.map?.setView('global');
+        this.map?.enableLayer('datacenters');
+        this.mapLayers.datacenters = true;
+        setTimeout(() => {
+          this.map?.triggerDatacenterClick(dc.id);
+        }, 300);
+        break;
+      }
+      case 'nuclear': {
+        const nuc = result.data as typeof NUCLEAR_FACILITIES[0];
+        this.map?.setView('global');
+        this.map?.enableLayer('nuclear');
+        this.mapLayers.nuclear = true;
+        setTimeout(() => {
+          this.map?.triggerNuclearClick(nuc.id);
+        }, 300);
+        break;
+      }
+      case 'irradiator': {
+        const irr = result.data as typeof GAMMA_IRRADIATORS[0];
+        this.map?.setView('global');
+        this.map?.enableLayer('irradiators');
+        this.mapLayers.irradiators = true;
+        setTimeout(() => {
+          this.map?.triggerIrradiatorClick(irr.id);
+        }, 300);
+        break;
+      }
+      case 'earthquake':
+      case 'outage':
+        // These are dynamic, just switch to map view
+        this.map?.setView('global');
+        break;
+    }
+  }
+
+  private scrollToPanel(panelId: string): void {
+    const panel = document.querySelector(`[data-panel="${panelId}"]`);
+    if (panel) {
+      panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      panel.classList.add('flash-highlight');
+      setTimeout(() => panel.classList.remove('flash-highlight'), 1500);
+    }
+  }
+
+  private highlightNewsItem(itemId: string): void {
+    setTimeout(() => {
+      const item = document.querySelector(`[data-news-id="${itemId}"]`);
+      if (item) {
+        item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        item.classList.add('flash-highlight');
+        setTimeout(() => item.classList.remove('flash-highlight'), 1500);
+      }
+    }, 100);
+  }
+
+  private updateSearchIndex(): void {
+    if (!this.searchModal) return;
+
+    // Update news sources (use link as unique id)
+    this.searchModal.registerSource('news', this.allNews.slice(0, 200).map(n => ({
+      id: n.link,
+      title: n.title,
+      subtitle: n.source,
+      data: n,
+    })));
+
+    // Update predictions if available
+    if (this.latestPredictions.length > 0) {
+      this.searchModal.registerSource('prediction', this.latestPredictions.map(p => ({
+        id: p.title,
+        title: p.title,
+        subtitle: `${(p.yesPrice * 100).toFixed(0)}% probability`,
+        data: p,
+      })));
+    }
+
+    // Update markets if available
+    if (this.latestMarkets.length > 0) {
+      this.searchModal.registerSource('market', this.latestMarkets.map(m => ({
+        id: m.symbol,
+        title: `${m.symbol} - ${m.name}`,
+        subtitle: `$${m.price?.toFixed(2) || 'N/A'}`,
+        data: m,
+      })));
+    }
   }
 
   private setupPlaybackControl(): void {
@@ -207,6 +451,7 @@ export class App {
           <button class="view-btn" data-view="mena">MENA</button>
         </div>
         <div class="header-right">
+          <button class="search-btn" id="searchBtn"><kbd>⌘K</kbd> Search</button>
           <span class="time-display" id="timeDisplay">--:--:-- UTC</span>
           <button class="settings-btn" id="settingsBtn">⚙ PANELS</button>
         </div>
@@ -414,6 +659,12 @@ export class App {
       });
     });
 
+    // Search button
+    document.getElementById('searchBtn')?.addEventListener('click', () => {
+      this.updateSearchIndex();
+      this.searchModal?.open();
+    });
+
     // Settings modal
     document.getElementById('settingsBtn')?.addEventListener('click', () => {
       document.getElementById('settingsModal')?.classList.add('active');
@@ -538,7 +789,11 @@ export class App {
       this.loadEarthquakes(),
       this.loadWeatherAlerts(),
       this.loadFredData(),
+      this.loadOutages(),
     ]);
+
+    // Update search index after all data loads
+    this.updateSearchIndex();
   }
 
   private async loadNewsCategory(category: string, feeds: typeof FEEDS.politics): Promise<NewsItem[]> {
@@ -681,6 +936,16 @@ export class App {
     }
   }
 
+  private async loadOutages(): Promise<void> {
+    try {
+      const outages = await fetchInternetOutages();
+      this.map?.setOutages(outages);
+      this.statusPanel?.updateFeed('NetBlocks', { status: 'ok', itemCount: outages.length });
+    } catch {
+      this.statusPanel?.updateFeed('NetBlocks', { status: 'error' });
+    }
+  }
+
   private async loadFredData(): Promise<void> {
     try {
       this.economicPanel?.setLoading(true);
@@ -722,5 +987,6 @@ export class App {
     setInterval(() => this.loadEarthquakes(), 5 * 60 * 1000);
     setInterval(() => this.loadWeatherAlerts(), 10 * 60 * 1000);
     setInterval(() => this.loadFredData(), 30 * 60 * 1000);
+    setInterval(() => this.loadOutages(), 60 * 60 * 1000); // 1 hour - Cloudflare rate limit
   }
 }

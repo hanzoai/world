@@ -8,3 +8,4 @@ export * from './storage';
 export * from './correlation';
 export * from './weather';
 export * from './fred';
+export * from './outages';

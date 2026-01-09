@@ -43,6 +43,9 @@ const PROXY_MAP: Record<string, string> = {
   '/rss/diplomat': 'https://thediplomat.com',
   '/rss/venturebeat': 'https://venturebeat.com',
   '/rss/foreignpolicy': 'https://foreignpolicy.com',
+  '/rss/ft': 'https://www.ft.com',
+  '/rss/openai': 'https://openai.com',
+  '/rss/reuters': 'https://www.reutersagency.com',
 };
 
 export function proxyUrl(localPath: string): string {

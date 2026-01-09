@@ -60,11 +60,11 @@ export async function fetchMultipleStocks(
   symbols: Array<{ symbol: string; name: string; display: string }>
 ): Promise<MarketData[]> {
   const results: MarketData[] = [];
-  // Sequential fetch with delay to avoid rate limiting
+  // Sequential fetch with longer delay to avoid Yahoo 429 rate limiting
   for (const s of symbols) {
     const result = await fetchStockQuote(s.symbol, s.name, s.display);
     results.push(result);
-    await delay(500); // 500ms delay between requests
+    await delay(2500); // 2.5s delay between requests to avoid Yahoo 429
   }
   return results.filter((r) => r.price !== null);
 }

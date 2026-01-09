@@ -120,12 +120,31 @@ export interface ConflictZone {
   keyDevelopments?: string[];
 }
 
+// Military base operator types
+export type MilitaryBaseType =
+  | 'us-nato'      // United States and NATO allies
+  | 'china'        // People's Republic of China
+  | 'russia'       // Russian Federation
+  | 'uk'           // United Kingdom (non-US NATO)
+  | 'france'       // France (non-US NATO)
+  | 'india'        // India
+  | 'italy'        // Italy
+  | 'uae'          // United Arab Emirates
+  | 'turkey'       // Turkey
+  | 'japan'        // Japan Self-Defense Forces
+  | 'other';       // Other nations
+
 export interface MilitaryBase {
   id: string;
   name: string;
   lat: number;
   lon: number;
-  type: 'us-nato' | 'china' | 'russia';
+  type: MilitaryBaseType;
+  description?: string;
+  country?: string;           // Host country
+  arm?: string;               // Armed forces branch (Navy, Air Force, Army, etc.)
+  status?: 'active' | 'planned' | 'controversial' | 'closed';
+  source?: string;            // Reference URL
 }
 
 export interface UnderseaCable {
@@ -150,13 +169,49 @@ export interface CyberRegion {
   sponsor: string;
 }
 
+// Nuclear facility types
+export type NuclearFacilityType =
+  | 'plant'        // Power reactors
+  | 'enrichment'   // Uranium enrichment
+  | 'reprocessing' // Plutonium reprocessing
+  | 'weapons'      // Weapons design/assembly
+  | 'ssbn'         // Submarine base (nuclear deterrent)
+  | 'test-site'    // Nuclear test site
+  | 'icbm'         // ICBM silo fields
+  | 'research';    // Research reactors
+
 export interface NuclearFacility {
   id: string;
   name: string;
   lat: number;
   lon: number;
-  type: 'plant' | 'enrichment' | 'weapons';
-  status: 'active' | 'contested' | 'inactive';
+  type: NuclearFacilityType;
+  status: 'active' | 'contested' | 'inactive' | 'decommissioned' | 'construction';
+  operator?: string;  // Operating country
+}
+
+export interface GammaIrradiator {
+  id: string;
+  city: string;
+  country: string;
+  lat: number;
+  lon: number;
+  organization?: string;
+}
+
+export type PipelineType = 'oil' | 'gas' | 'products';
+export type PipelineStatus = 'operating' | 'construction';
+
+export interface Pipeline {
+  id: string;
+  name: string;
+  type: PipelineType;
+  status: PipelineStatus;
+  points: [number, number][];  // [lon, lat] pairs
+  capacity?: string;           // e.g., "1.2 million bpd"
+  length?: string;             // e.g., "1,768 km"
+  operator?: string;
+  countries?: string[];
 }
 
 export interface Earthquake {
@@ -189,13 +244,64 @@ export interface MapLayers {
   conflicts: boolean;
   bases: boolean;
   cables: boolean;
+  pipelines: boolean;
   hotspots: boolean;
   nuclear: boolean;
+  irradiators: boolean;
   sanctions: boolean;
   earthquakes: boolean;
   weather: boolean;
   economic: boolean;
   countries: boolean;
+  waterways: boolean;
+  outages: boolean;
+  datacenters: boolean;
+}
+
+export interface AIDataCenter {
+  id: string;
+  name: string;
+  owner: string;
+  country: string;
+  lat: number;
+  lon: number;
+  status: 'existing' | 'planned' | 'decommissioned';
+  chipType: string;
+  chipCount: number;
+  powerMW?: number;
+  h100Equivalent?: number;
+  sector?: string;
+  note?: string;
+}
+
+export interface InternetOutage {
+  id: string;
+  title: string;
+  link: string;
+  description: string;
+  pubDate: Date;
+  country: string;
+  region?: string;
+  lat: number;
+  lon: number;
+  severity: 'partial' | 'major' | 'total';
+  categories: string[];
+  cause?: string;
+  outageType?: string;
+  endDate?: Date;
+}
+
+export type EconomicCenterType = 'exchange' | 'central-bank' | 'financial-hub';
+
+export interface EconomicCenter {
+  id: string;
+  name: string;
+  type: EconomicCenterType;
+  lat: number;
+  lon: number;
+  country: string;
+  marketHours?: { open: string; close: string; timezone: string };
+  description?: string;
 }
 
 export interface PredictionMarket {
